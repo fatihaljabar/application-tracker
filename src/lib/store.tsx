@@ -42,6 +42,12 @@ function load(): DB {
   return seedDB();
 }
 
+/** Fungsi murni, sengaja di luar komponen supaya tidak dibuat ulang tiap render. */
+const pushActivity = (d: DB, a: Omit<Activity, 'id'>): DB => ({
+  ...d,
+  activities: [{ ...a, id: uid() }, ...d.activities],
+});
+
 export interface Toast {
   id: string;
   message: string;
@@ -135,11 +141,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const patch = useCallback((fn: (d: DB) => DB) => setDb((prev) => fn(prev)), []);
-
-  const pushActivity = (d: DB, a: Omit<Activity, 'id'>): DB => ({
-    ...d,
-    activities: [{ ...a, id: uid() }, ...d.activities],
-  });
 
   const value: Ctx = useMemo(() => {
     return {

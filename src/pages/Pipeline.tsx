@@ -68,6 +68,7 @@ export default function Pipeline() {
           {STATUSES.map((s, ci) => {
             const items = apps.filter((a) => a.status === s.key);
             return (
+              // biome-ignore lint/a11y/noStaticElementInteractions: kolom hanya target lepas untuk mouse. Pengguna papan ketik memindahkan status lewat pilihan status di halaman detail, jadi tidak ada jalur yang hilang.
               <section
                 key={s.key}
                 onDragOver={(e) => {
@@ -98,7 +99,8 @@ export default function Pipeline() {
                   {items.map((a) => {
                     const dl = daysUntil(a.deadline);
                     return (
-                      <article
+                      // biome-ignore lint/a11y/useSemanticElements: kartu ini sekaligus sumber seret HTML5 dan berisi elemen blok, dua hal yang tidak sah di dalam <button> asli.
+                      <div
                         key={a.id}
                         draggable
                         onDragStart={() => setDragId(a.id)}
@@ -153,7 +155,7 @@ export default function Pipeline() {
                             </span>
                           )}
                         </div>
-                      </article>
+                      </div>
                     );
                   })}
 

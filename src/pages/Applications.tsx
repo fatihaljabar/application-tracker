@@ -243,10 +243,16 @@ export default function Applications() {
                 className="h-10 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3.5 text-[13px] text-[var(--ink)] focus-ring"
               />
             </label>
-            <label className="flex items-center gap-3 self-end rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-3.5 py-2.5">
-              <Toggle checked={showArchived} onChange={setShowArchived} />
+            {/* Bukan <label>: Toggle adalah tombol role="switch", bukan kontrol form,
+                jadi label pembungkus tidak pernah berfungsi. Namanya diberikan lewat aria-label. */}
+            <div className="flex items-center gap-3 self-end rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-3.5 py-2.5">
+              <Toggle
+                checked={showArchived}
+                onChange={setShowArchived}
+                aria-label={t('a.showArchived')}
+              />
               <span className="text-[12.5px] text-[var(--ink-soft)]">{t('a.showArchived')}</span>
-            </label>
+            </div>
             <Button variant="ghost" icon="fi-rr-refresh" onClick={reset} className="self-end">
               {t('c.reset')}
             </Button>

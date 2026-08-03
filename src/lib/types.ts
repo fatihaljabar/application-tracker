@@ -109,6 +109,8 @@ export interface DocFile {
 }
 
 export interface QA {
+  /** Identitas stabil supaya React tidak salah memasangkan baris saat satu pasangan dihapus. */
+  id: string;
   q: string;
   a: string;
 }

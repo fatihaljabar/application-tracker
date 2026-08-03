@@ -39,8 +39,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const loc = useLocation();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: loc.pathname sengaja jadi pemicu,
-  // bukan nilai yang dipakai di dalam efek. Tanpa dependensi ini menu tidak menutup saat pindah halaman.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loc.pathname sengaja dipakai sebagai pemicu, bukan nilai yang dibaca di dalam efek. Tanpa dependensi ini menu berhenti menutup saat pindah halaman.
   useEffect(() => setOpen(false), [loc.pathname]);
 
   // Menu mobile wajib bisa ditutup tanpa mouse.

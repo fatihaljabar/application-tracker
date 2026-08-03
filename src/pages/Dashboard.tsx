@@ -68,7 +68,7 @@ export default function Dashboard() {
     const now = new Date();
     if (range === 'weekly') {
       const start = startOfWeek(now);
-      const buckets: { label: string; count: number }[] = [];
+      const buckets: { key: string; label: string; count: number }[] = [];
       for (let w = 7; w >= 0; w--) {
         const from = addDays(start, -7 * w);
         const to = addDays(from, 7);
@@ -78,6 +78,7 @@ export default function Dashboard() {
           return d >= from && d < to;
         }).length;
         buckets.push({
+          key: from.toISOString(),
           label: new Intl.DateTimeFormat(lang === 'id' ? 'id-ID' : 'en-GB', {
             day: 'numeric',
             month: 'short',
@@ -87,7 +88,7 @@ export default function Dashboard() {
       }
       return buckets;
     }
-    const buckets: { label: string; count: number }[] = [];
+    const buckets: { key: string; label: string; count: number }[] = [];
     for (let m = 7; m >= 0; m--) {
       const from = new Date(now.getFullYear(), now.getMonth() - m, 1);
       const to = new Date(now.getFullYear(), now.getMonth() - m + 1, 1);
@@ -97,6 +98,7 @@ export default function Dashboard() {
         return d >= from && d < to;
       }).length;
       buckets.push({
+        key: from.toISOString(),
         label: new Intl.DateTimeFormat(lang === 'id' ? 'id-ID' : 'en-GB', { month: 'short' }).format(from),
         count,
       });
@@ -184,8 +186,8 @@ export default function Dashboard() {
             }
           />
           <div className="flex h-[190px] items-end gap-2 sm:gap-3">
-            {chart.map((c, i) => (
-              <div key={c.label + i} className="group flex flex-1 flex-col items-center gap-2">
+            {chart.map((c) => (
+              <div key={c.key} className="group flex flex-1 flex-col items-center gap-2">
                 <span className="text-[11px] font-medium text-[var(--ink-muted)] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   {c.count}
                 </span>

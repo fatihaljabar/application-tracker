@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -81,6 +82,7 @@ export function Field({
   className?: string;
 }) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: {children} hampir selalu berisi Input atau Textarea, dan label pembungkus memang benar untuk keduanya. Aturan ini tidak bisa menembus prop children untuk membuktikannya.
     <label className={cx('block', className)}>
       {label && (
         <span className="mb-1.5 flex items-center gap-1 text-[12.5px] font-medium text-[var(--ink-soft)]">
@@ -151,18 +153,20 @@ export function Select({
   const listRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
 
-  const place = () => {
+  // useCallback supaya identitasnya stabil dan bisa dipakai sebagai dependensi efek
+  // sekaligus sebagai listener yang benar-benar bisa dilepas kembali.
+  const place = useCallback(() => {
     const el = btnRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
     const spaceBelow = window.innerHeight - r.bottom;
     const up = spaceBelow < 240 && r.top > spaceBelow;
     setCoords({ top: up ? r.top - 6 : r.bottom + 6, left: r.left, width: r.width, up });
-  };
+  }, []);
 
   useLayoutEffect(() => {
     if (open) place();
-  }, [open]);
+  }, [open, place]);
 
   useEffect(() => {
     if (!open) return;
@@ -184,7 +188,7 @@ export function Select({
       window.removeEventListener('scroll', place, true);
       window.removeEventListener('resize', place);
     };
-  }, [open]);
+  }, [open, place]);
 
   return (
     <>
@@ -502,16 +506,18 @@ export function Badge({
 export function Toggle({
   checked,
   onChange,
+  ...rest
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-}) {
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'>) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
+      {...rest}
       className={cx(
         'relative h-6 w-11 shrink-0 rounded-full transition-colors duration-300 focus-ring cursor-pointer',
         checked ? 'bg-[var(--accent)]' : 'bg-[var(--line-strong)]',

@@ -62,7 +62,9 @@ export default function Statistics() {
 
     // top positions
     const byPos = new Map<string, number>();
-    apps.forEach((a) => byPos.set(a.position, (byPos.get(a.position) ?? 0) + 1));
+    apps.forEach((a) => {
+      byPos.set(a.position, (byPos.get(a.position) ?? 0) + 1);
+    });
     const topPositions = Array.from(byPos.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
     // avg response time
@@ -80,11 +82,15 @@ export default function Statistics() {
 
     // sources
     const bySource = new Map<string, number>();
-    apps.forEach((a) => bySource.set(a.source, (bySource.get(a.source) ?? 0) + 1));
+    apps.forEach((a) => {
+      bySource.set(a.source, (bySource.get(a.source) ?? 0) + 1);
+    });
     const sources = Array.from(bySource.entries()).sort((a, b) => b[1] - a[1]);
 
     const byWork = new Map<string, number>();
-    apps.forEach((a) => byWork.set(a.workType, (byWork.get(a.workType) ?? 0) + 1));
+    apps.forEach((a) => {
+      byWork.set(a.workType, (byWork.get(a.workType) ?? 0) + 1);
+    });
     const workTypes = Array.from(byWork.entries()).sort((a, b) => b[1] - a[1]);
 
     const byStatus = STATUSES.map((st) => ({

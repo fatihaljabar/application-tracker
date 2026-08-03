@@ -39,6 +39,7 @@ export function TagChip({
     // Pembungkus tidak bisa jadi <button> karena tombol hapus bersarang di dalamnya
     // (tombol di dalam tombol bukan HTML yang sah). Peran dan fokus ditambahkan manual,
     // dan hanya ketika chip-nya memang bisa diklik.
+    // biome-ignore lint/a11y/noStaticElementInteractions: peran, fokus, dan handler papan ketik diberikan bersamaan hanya ketika onClick ada. Aturan ini tidak bisa membuktikan hubungan bersyarat itu secara statis.
     <span
       onClick={onClick}
       role={onClick ? 'button' : undefined}

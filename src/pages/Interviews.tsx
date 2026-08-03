@@ -10,7 +10,7 @@ const blank = (appId = ''): InterviewNote => ({
   appId,
   stage: 'HR Interview',
   date: todayISO(),
-  qa: [{ q: '', a: '' }],
+  qa: [{ id: uid(), q: '', a: '' }],
   feedback: '',
   strengths: '',
   weaknesses: '',
@@ -141,9 +141,9 @@ export default function Interviews() {
                           {t('i.questions')}
                         </p>
                         <div className="space-y-2.5">
-                          {n.qa.map((x, idx) => (
+                          {n.qa.map((x) => (
                             <div
-                              key={idx}
+                              key={x.id}
                               className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3.5"
                             >
                               <p className="flex gap-2 text-[13px] font-medium text-[var(--ink)]">
@@ -241,14 +241,14 @@ export default function Interviews() {
                 size="sm"
                 variant="soft"
                 icon="fi-rr-plus"
-                onClick={() => setForm((f) => ({ ...f, qa: [...f.qa, { q: '', a: '' }] }))}
+                onClick={() => setForm((f) => ({ ...f, qa: [...f.qa, { id: uid(), q: '', a: '' }] }))}
               >
                 {t('i.addQA')}
               </Button>
             </div>
             <div className="space-y-2.5">
               {form.qa.map((x, idx) => (
-                <div key={idx} className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                <div key={x.id} className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
                   <div className="flex items-center gap-2">
                     <Input
                       value={x.q}

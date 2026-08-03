@@ -42,7 +42,9 @@ export default function Documents() {
       .filter((d) => !term || (`${d.label} ${d.group} ${d.name}`).toLowerCase().includes(term))
       .filter((d) => !cat || d.category === cat);
     const map = new Map<string, DocFile[]>();
-    filtered.forEach((d) => map.set(d.group, [...(map.get(d.group) ?? []), d]));
+    filtered.forEach((d) => {
+      map.set(d.group, [...(map.get(d.group) ?? []), d]);
+    });
     return Array.from(map.entries()).map(([g, items]) => [
       g,
       [...items].sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt)),
@@ -212,6 +214,8 @@ export default function Documents() {
         }
       >
         <div className="space-y-4">
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: seret-lepas hanya pelengkap; <input type="file"> di bawah tetap jalur utama yang bisa dijangkau papan ketik. */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: sama — tidak ada aksi yang hanya bisa dicapai lewat seret. */}
           <div
             onDragOver={(e) => {
               e.preventDefault();

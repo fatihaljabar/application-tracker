@@ -42,7 +42,7 @@ export default function Calendar() {
     })) as Ev[];
     db.apps
       .filter((a) => a.deadline && !a.archived)
-      .forEach((a) =>
+      .forEach((a) => {
         out.push({
           id: `d-${a.id}`,
           date: new Date(`${a.deadline}T23:59:00`),
@@ -50,11 +50,11 @@ export default function Calendar() {
           kind: 'deadline',
           meta: a.position,
           done: false,
-        }),
-      );
+        });
+      });
     db.bookmarks
       .filter((b) => b.deadline)
-      .forEach((b) =>
+      .forEach((b) => {
         out.push({
           id: `b-${b.id}`,
           date: new Date(`${b.deadline}T23:59:00`),
@@ -62,8 +62,8 @@ export default function Calendar() {
           kind: 'deadline',
           meta: b.position,
           done: false,
-        }),
-      );
+        });
+      });
     return out.sort((a, b) => +a.date - +b.date);
   }, [db.reminders, db.apps, db.bookmarks, t]);
 
@@ -138,7 +138,7 @@ export default function Calendar() {
                 {w}
               </div>
             ))}
-            {grid.map((d, i) => {
+            {grid.map((d) => {
               const inMonth = d.getMonth() === cursor.getMonth();
               const evs = dayEvents(d);
               const isToday = sameDay(d, new Date());
