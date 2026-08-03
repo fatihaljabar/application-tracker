@@ -39,7 +39,17 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const loc = useLocation();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loc.pathname sengaja jadi pemicu,
+  // bukan nilai yang dipakai di dalam efek. Tanpa dependensi ini menu tidak menutup saat pindah halaman.
   useEffect(() => setOpen(false), [loc.pathname]);
+
+  // Menu mobile wajib bisa ditutup tanpa mouse.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
 
   const dueSoon = db.reminders.filter((r) => {
     if (r.done) return false;
@@ -151,7 +161,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* mobile top bar */}
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--surface)]/90 px-4 py-3 backdrop-blur-md lg:hidden">
-        <button
+        <button type="button"
           onClick={() => setOpen(true)}
           className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--line)] text-[var(--ink)] transition-colors hover:bg-[var(--bg-soft)] cursor-pointer"
         >
@@ -163,7 +173,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </span>
           {t('appName')}
         </span>
-        <button
+        <button type="button"
           onClick={() => updateSettings({ theme: theme === 'light' ? 'dark' : 'light' })}
           className="ml-auto grid h-9 w-9 place-items-center rounded-xl border border-[var(--line)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--bg-soft)] cursor-pointer"
         >
@@ -174,7 +184,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Lapisan gelap hanya pintasan mouse; pengguna papan ketik memakai Escape. */}
           <div
+            role="presentation"
+            aria-hidden="true"
             className="anim-fade absolute inset-0 bg-black/35 backdrop-blur-[2px]"
             onClick={() => setOpen(false)}
           />
@@ -183,7 +196,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <span className="text-[14.5px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
                 {t('appName')}
               </span>
-              <button
+              <button type="button"
                 onClick={() => setOpen(false)}
                 className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] cursor-pointer"
               >
@@ -191,7 +204,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               </button>
             </div>
             {nav}
-            <button
+            <button type="button"
               onClick={signOut}
               className="m-3 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] text-[var(--danger)] transition-colors hover:bg-[var(--danger)]/10 cursor-pointer"
             >

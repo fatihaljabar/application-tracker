@@ -47,7 +47,7 @@ export default function Settings() {
           <Row title={t('set.theme')}>
             <div className="inline-flex gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-2)] p-1">
               {(['light', 'dark'] as const).map((th) => (
-                <button
+                <button type="button"
                   key={th}
                   onClick={() => save({ theme: th })}
                   className={cx(
@@ -179,7 +179,7 @@ export default function Settings() {
               icon="fi-rr-download"
               onClick={() => {
                 downloadJSON(db, 'lacak-lamaran-export.json');
-                toast(t('c.export') + ' ✓');
+                toast(`${t('c.export')} ✓`);
               }}
             >
               {t('c.export')}

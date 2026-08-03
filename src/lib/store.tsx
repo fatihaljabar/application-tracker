@@ -163,7 +163,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             appId: app.id,
             type: 'created',
             title: `${translate(d.settings.language, 't.type.created')} — ${app.company}`,
-            description: `${app.position}${app.location ? ' · ' + app.location : ''}`,
+            description: `${app.position}${app.location ? ` · ${app.location}` : ''}`,
             date: now,
           }),
         );
@@ -193,7 +193,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const copy: Application = {
             ...src,
             id: uid(),
-            company: src.company + ' (copy)',
+            company: `${src.company} (copy)`,
             status: 'wishlist',
             history: [],
             archived: false,
@@ -229,7 +229,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return pushActivity(next, {
             appId: id,
             type: 'status',
-            title: `${app.company} → ${translate(d.settings.language, 'status.' + status)}`,
+            title: `${app.company} → ${translate(d.settings.language, `status.${status}`)}`,
             description: `${app.position}`,
             date: now,
           });

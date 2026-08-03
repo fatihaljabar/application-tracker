@@ -30,7 +30,7 @@ function Stat({
     >
       <span
         className="grid h-9 w-9 place-items-center rounded-xl text-[13px]"
-        style={{ background: color + '1c', color }}
+        style={{ background: `${color}1c`, color }}
       >
         <Icon name={icon} />
       </span>
@@ -74,7 +74,7 @@ export default function Dashboard() {
         const to = addDays(from, 7);
         const count = apps.filter((a) => {
           if (!a.appliedDate) return false;
-          const d = new Date(a.appliedDate + 'T00:00:00');
+          const d = new Date(`${a.appliedDate}T00:00:00`);
           return d >= from && d < to;
         }).length;
         buckets.push({
@@ -93,7 +93,7 @@ export default function Dashboard() {
       const to = new Date(now.getFullYear(), now.getMonth() - m + 1, 1);
       const count = apps.filter((a) => {
         if (!a.appliedDate) return false;
-        const d = new Date(a.appliedDate + 'T00:00:00');
+        const d = new Date(`${a.appliedDate}T00:00:00`);
         return d >= from && d < to;
       }).length;
       buckets.push({
@@ -110,11 +110,11 @@ export default function Dashboard() {
     const now = new Date();
     const ws = startOfWeek(now);
     const weekCount = apps.filter(
-      (a) => a.appliedDate && new Date(a.appliedDate + 'T00:00:00') >= ws,
+      (a) => a.appliedDate && new Date(`${a.appliedDate}T00:00:00`) >= ws,
     ).length;
     const ms = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthCount = apps.filter(
-      (a) => a.appliedDate && new Date(a.appliedDate + 'T00:00:00') >= ms,
+      (a) => a.appliedDate && new Date(`${a.appliedDate}T00:00:00`) >= ms,
     ).length;
     return { weekCount, monthCount };
   }, [apps]);
@@ -247,7 +247,7 @@ export default function Dashboard() {
                   key={s.key}
                   className="h-full transition-all duration-500"
                   style={{ width: `${(s.count / distTotal) * 100}%`, background: s.color }}
-                  title={t('status.' + s.key)}
+                  title={t(`status.${s.key}`)}
                 />
               ))}
             </div>
@@ -255,7 +255,7 @@ export default function Dashboard() {
               {distribution.map((s) => (
                 <span key={s.key} className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--ink-muted)]">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.color }} />
-                  {t('status.' + s.key)} <span className="text-[var(--ink)]">{s.count}</span>
+                  {t(`status.${s.key}`)} <span className="text-[var(--ink)]">{s.count}</span>
                 </span>
               ))}
             </div>

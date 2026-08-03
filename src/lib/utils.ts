@@ -6,7 +6,7 @@ export const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export function fmtDate(value: string, lang: 'id' | 'en', tz?: string) {
   if (!value) return '—';
-  const d = new Date(value.length <= 10 ? value + 'T00:00:00' : value);
+  const d = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
   if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(lang === 'id' ? 'id-ID' : 'en-GB', {
     day: 'numeric',
@@ -32,8 +32,8 @@ export function fmtDateTime(value: string, lang: 'id' | 'en', tz?: string) {
 
 export function fmtMoney(n: number | null) {
   if (n === null || n === undefined || Number.isNaN(n)) return '';
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + ' jt';
-  if (n >= 1000) return (n / 1000).toFixed(0) + ' rb';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)} jt`;
+  if (n >= 1000) return `${(n / 1000).toFixed(0)} rb`;
   return String(n);
 }
 
@@ -45,13 +45,13 @@ export function salaryLabel(min: number | null, max: number | null) {
 
 export function daysUntil(value: string) {
   if (!value) return null;
-  const d = new Date(value.length <= 10 ? value + 'T23:59:59' : value);
+  const d = new Date(value.length <= 10 ? `${value}T23:59:59` : value);
   if (Number.isNaN(d.getTime())) return null;
   return Math.ceil((d.getTime() - Date.now()) / 86400000);
 }
 
 export function relTime(value: string, lang: 'id' | 'en') {
-  const d = new Date(value.length <= 10 ? value + 'T00:00:00' : value);
+  const d = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
   if (Number.isNaN(d.getTime())) return '—';
   const diff = Math.round((d.getTime() - Date.now()) / 1000);
   const abs = Math.abs(diff);
@@ -85,9 +85,9 @@ export function sameDay(a: Date, b: Date) {
 
 export function fileSize(bytes: number) {
   if (!bytes) return '—';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
 export function initials(text: string) {

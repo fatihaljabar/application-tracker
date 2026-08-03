@@ -33,19 +33,19 @@ export default function Calendar() {
 
   const events = useMemo<Ev[]>(() => {
     const out: Ev[] = db.reminders.map((r) => ({
-      id: 'r-' + r.id,
+      id: `r-${r.id}`,
       date: new Date(r.datetime),
       title: r.title,
       kind: r.type,
-      meta: db.apps.find((a) => a.id === r.appId)?.company ?? t('r.type.' + r.type),
+      meta: db.apps.find((a) => a.id === r.appId)?.company ?? t(`r.type.${r.type}`),
       done: r.done,
     })) as Ev[];
     db.apps
       .filter((a) => a.deadline && !a.archived)
       .forEach((a) =>
         out.push({
-          id: 'd-' + a.id,
-          date: new Date(a.deadline + 'T23:59:00'),
+          id: `d-${a.id}`,
+          date: new Date(`${a.deadline}T23:59:00`),
           title: `${t('f.deadline')} · ${a.company}`,
           kind: 'deadline',
           meta: a.position,
@@ -56,8 +56,8 @@ export default function Calendar() {
       .filter((b) => b.deadline)
       .forEach((b) =>
         out.push({
-          id: 'b-' + b.id,
-          date: new Date(b.deadline + 'T23:59:00'),
+          id: `b-${b.id}`,
+          date: new Date(`${b.deadline}T23:59:00`),
           title: `${t('f.deadline')} · ${b.company}`,
           kind: 'deadline',
           meta: b.position,
@@ -114,13 +114,13 @@ export default function Calendar() {
               }).format(cursor)}
             </h2>
             <div className="flex gap-1">
-              <button
+              <button type="button"
                 onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
                 className="grid h-8 w-8 place-items-center rounded-full border border-[var(--line)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--bg-soft)] cursor-pointer"
               >
                 <Icon name="fi-rr-angle-left" className="text-[11px]" />
               </button>
-              <button
+              <button type="button"
                 onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
                 className="grid h-8 w-8 place-items-center rounded-full border border-[var(--line)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--bg-soft)] cursor-pointer"
               >
@@ -145,7 +145,8 @@ export default function Calendar() {
               const isSel = sameDay(d, selected);
               return (
                 <button
-                  key={i}
+                  type="button"
+                  key={d.toISOString()}
                   onClick={() => setSelected(d)}
                   className={cx(
                     'flex aspect-square flex-col items-center justify-start gap-1 rounded-xl p-1.5 transition-all duration-200 cursor-pointer sm:p-2',
@@ -177,7 +178,7 @@ export default function Calendar() {
             {(Object.keys(KIND_COLOR) as Ev['kind'][]).map((k) => (
               <span key={k} className="flex items-center gap-1.5 text-[11px] text-[var(--ink-muted)]">
                 <span className="h-2 w-2 rounded-full" style={{ background: KIND_COLOR[k] }} />
-                {t('r.type.' + k)}
+                {t(`r.type.${k}`)}
               </span>
             ))}
           </div>
@@ -211,7 +212,7 @@ export default function Calendar() {
                 >
                   <span
                     className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[12px]"
-                    style={{ background: KIND_COLOR[e.kind] + '1c', color: KIND_COLOR[e.kind] }}
+                    style={{ background: `${KIND_COLOR[e.kind]}1c`, color: KIND_COLOR[e.kind] }}
                   >
                     <Icon name={REMINDER_ICON[e.kind]} />
                   </span>

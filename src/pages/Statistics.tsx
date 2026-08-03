@@ -71,7 +71,7 @@ export default function Statistics() {
       if (!a.appliedDate) return;
       const first = a.history.find((h) => RANK[h.status] >= 2 || h.status === 'rejected');
       if (!first) return;
-      const dd = (+new Date(first.at) - +new Date(a.appliedDate + 'T00:00:00')) / 86400000;
+      const dd = (+new Date(first.at) - +new Date(`${a.appliedDate}T00:00:00`)) / 86400000;
       if (dd >= 0 && dd < 400) diffs.push(dd);
     });
     const avgResponse = diffs.length
@@ -158,7 +158,7 @@ export default function Statistics() {
             {s.funnel.map((f, i) => (
               <div key={f.status} className="flex items-center gap-3">
                 <span className="w-[104px] shrink-0 truncate text-[12px] text-[var(--ink-soft)]">
-                  {t('status.' + f.status)}
+                  {t(`status.${f.status}`)}
                 </span>
                 <div className="h-7 flex-1 overflow-hidden rounded-lg bg-[var(--bg-soft)]">
                   <div
@@ -266,10 +266,10 @@ export default function Statistics() {
               <span
                 key={st.key}
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px]"
-                style={{ background: st.color + '15', color: st.color }}
+                style={{ background: `${st.color}15`, color: st.color }}
               >
                 <Icon name="fi-rr-circle-small" className="text-[8px]" />
-                {t('status.' + st.key)} {st.count}
+                {t(`status.${st.key}`)} {st.count}
               </span>
             ))}
           </div>

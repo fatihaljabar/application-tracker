@@ -104,7 +104,7 @@ export default function Reminders() {
                 )}
                 style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}
               >
-                <button
+                <button type="button"
                   onClick={() => toggleReminder(r.id)}
                   className={cx(
                     'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-all duration-200 cursor-pointer',
@@ -123,7 +123,7 @@ export default function Reminders() {
                       className="text-[11px] text-[var(--ink-muted)]"
                     />
                     <span className="text-[11px] uppercase tracking-[0.06em] text-[var(--ink-muted)]">
-                      {t('r.type.' + r.type)}
+                      {t(`r.type.${r.type}`)}
                     </span>
                   </div>
                   <p
@@ -150,13 +150,13 @@ export default function Reminders() {
                 </div>
 
                 <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  <button
+                  <button type="button"
                     onClick={() => edit(r)}
                     className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
                   >
                     <Icon name="fi-rr-pencil" className="text-[11px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setConfirmId(r.id)}
                     className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >
@@ -197,7 +197,7 @@ export default function Reminders() {
               <Select
                 value={form.type}
                 onChange={(v) => setForm((f) => ({ ...f, type: v as ReminderType }))}
-                options={REMINDER_TYPES.map((x) => ({ value: x, label: t('r.type.' + x) }))}
+                options={REMINDER_TYPES.map((x) => ({ value: x, label: t(`r.type.${x}`) }))}
               />
             </Field>
             <Field label={t('f.date')} error={err.datetime}>

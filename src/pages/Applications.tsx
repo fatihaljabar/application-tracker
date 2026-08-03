@@ -163,7 +163,7 @@ export default function Applications() {
                 { value: '', label: t('c.all') },
                 ...STATUS_KEYS.map((s) => ({
                   value: s,
-                  label: t('status.' + s),
+                  label: t(`status.${s}`),
                   color: statusMeta(s).color,
                 })),
               ]}
@@ -282,7 +282,7 @@ export default function Applications() {
                 <div className="flex items-start gap-3">
                   <CompanyAvatar name={a.company} size={42} />
                   <div className="min-w-0 flex-1">
-                    <button
+                    <button type="button"
                       onClick={() => setDetail(a)}
                       className="block max-w-full truncate text-left text-[14px] font-semibold tracking-[-0.01em] text-[var(--ink)] transition-colors hover:text-[var(--accent)] cursor-pointer"
                     >
@@ -291,7 +291,7 @@ export default function Applications() {
                     <p className="truncate text-[12.5px] text-[var(--ink-muted)]">{a.position}</p>
                   </div>
                   <div className="flex items-center gap-0.5">
-                    <button
+                    <button type="button"
                       onClick={() => toggleFavorite(a.id)}
                       className={cx(
                         'grid h-8 w-8 place-items-center rounded-full transition-all duration-200 cursor-pointer',
@@ -372,7 +372,7 @@ export default function Applications() {
                     className="border-b border-[var(--line)] text-[13px] transition-colors last:border-0 hover:bg-[var(--surface-2)]"
                   >
                     <td className="px-5 py-3">
-                      <button
+                      <button type="button"
                         onClick={() => setDetail(a)}
                         className="font-medium text-[var(--ink)] transition-colors hover:text-[var(--accent)] cursor-pointer"
                       >

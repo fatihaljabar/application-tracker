@@ -36,7 +36,7 @@ export default function Interviews() {
         if (!term) return true;
         const app = db.apps.find((a) => a.id === n.appId);
         return (
-          (app?.company + ' ' + app?.position + ' ' + n.stage + ' ' + n.feedback)
+          (`${app?.company} ${app?.position} ${n.stage} ${n.feedback}`)
             .toLowerCase()
             .includes(term) || n.qa.some((x) => (x.q + x.a).toLowerCase().includes(term))
         );
@@ -106,7 +106,7 @@ export default function Interviews() {
                       {n.stage} · {fmtDate(n.date, lang, tz)} · {n.qa.length} {t('i.question').toLowerCase()}
                     </p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setForm(n);
                       setErr({});
@@ -116,13 +116,13 @@ export default function Interviews() {
                   >
                     <Icon name="fi-rr-pencil" className="text-[12px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setConfirmId(n.id)}
                     className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >
                     <Icon name="fi-rr-trash" className="text-[12px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setExpanded(isOpen ? null : n.id)}
                     className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
                   >
@@ -260,7 +260,7 @@ export default function Interviews() {
                         }))
                       }
                     />
-                    <button
+                    <button type="button"
                       onClick={() => setForm((f) => ({ ...f, qa: f.qa.filter((_, j) => j !== idx) }))}
                       className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                     >

@@ -57,7 +57,7 @@ export function Button({
     icon: 'h-9 w-9 text-[13px]',
   };
   return (
-    <button className={cx(base, variants[variant], sizes[size], className)} {...rest}>
+    <button type="button" className={cx(base, variants[variant], sizes[size], className)} {...rest}>
       {icon && <Icon name={icon} className="text-[1.05em]" />}
       {children}
     </button>
@@ -380,7 +380,10 @@ export function Modal({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+      {/* Lapisan gelap hanya pintasan mouse; pengguna papan ketik memakai Escape. */}
       <div
+        role="presentation"
+        aria-hidden="true"
         className="anim-fade absolute inset-0 bg-[#1a1916]/35 backdrop-blur-[3px]"
         onClick={onClose}
       />
@@ -399,7 +402,7 @@ export function Modal({
               <p className="mt-0.5 text-[12.5px] text-[var(--ink-muted)]">{subtitle}</p>
             )}
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--ink-muted)] transition-all duration-200 hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] focus-ring cursor-pointer"
           >
@@ -485,7 +488,7 @@ export function Badge({
       )}
       style={
         color
-          ? { color, background: color + '1a', border: `1px solid ${color}33` }
+          ? { color, background: `${color}1a`, border: `1px solid ${color}33` }
           : undefined
       }
     >
@@ -616,7 +619,7 @@ export function SearchInput({
         className={cx(inputCls, 'pl-10 pr-9')}
       />
       {value && (
-        <button
+        <button type="button"
           onClick={() => onChange('')}
           className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
         >
