@@ -1,0 +1,178 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f7f6f3;
+  --bg-soft: #efeeea;
+  --surface: #ffffff;
+  --surface-2: #faf9f7;
+  --line: #e6e3dd;
+  --line-strong: #d8d4cc;
+  --ink: #23211d;
+  --ink-soft: #57534a;
+  --ink-muted: #8d887d;
+  --accent: #2f6f5e;
+  --accent-soft: #e6efec;
+  --accent-ink: #1f5648;
+  --danger: #b06565;
+  --warn: #b58a52;
+  --ok: #3f8f74;
+  --ring: rgba(47, 111, 94, 0.28);
+  --shadow-soft: 0 1px 2px rgba(35, 33, 29, 0.04), 0 8px 24px -12px rgba(35, 33, 29, 0.14);
+}
+
+.dark {
+  --bg: #16171a;
+  --bg-soft: #1b1d21;
+  --surface: #1e2024;
+  --surface-2: #232529;
+  --line: #2e3137;
+  --line-strong: #3a3e45;
+  --ink: #eceae5;
+  --ink-soft: #b6b2aa;
+  --ink-muted: #85817a;
+  --accent: #6fb3a0;
+  --accent-soft: #22322e;
+  --accent-ink: #9ad3c3;
+  --danger: #cf8a8a;
+  --warn: #d3a86e;
+  --ok: #6fb3a0;
+  --ring: rgba(111, 179, 160, 0.3);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-bg: var(--bg);
+  --color-bgsoft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-line: var(--line);
+  --color-linestrong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-inksoft: var(--ink-soft);
+  --color-inkmuted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accentsoft: var(--accent-soft);
+  --color-accentink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+  --radius-xl2: 1.15rem;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* flaticon glyph alignment */
+[class^="fi-"],
+[class*=" fi-"] {
+  line-height: 0;
+  display: inline-flex;
+}
+[class^="fi-"]::before,
+[class*=" fi-"]::before {
+  line-height: 1;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes growBar {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+
+.anim-fade-up { animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-fade { animation: fadeIn 0.35s ease both; }
+.anim-pop { animation: popIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-slide-right { animation: slideInRight 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-sheet { animation: sheetUp 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-bar { animation: growBar 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: bottom; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.15rem;
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.5;
+}
+
+.dragging {
+  opacity: 0.45;
+  transform: rotate(-1.2deg) scale(0.98);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
