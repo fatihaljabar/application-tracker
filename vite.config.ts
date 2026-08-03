@@ -12,6 +12,11 @@ export default defineConfig({
     },
   },
   server: {
+    // Port dikunci: Google hanya menerima origin yang terdaftar di Cloud Console.
+    // Kalau Vite diam-diam pindah ke port lain, login gagal dengan pesan yang
+    // menyesatkan. Lebih baik gagal start dengan jelas.
+    port: 5173,
+    strictPort: true,
     // Panggilan /api saat ngoding diteruskan ke proses Node, bukan ke Vite.
     proxy: { '/api': 'http://localhost:3000' },
   },
