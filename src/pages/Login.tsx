@@ -17,13 +17,25 @@ export default function Login() {
       busyRef.current = true;
       setBusy(true);
       try {
-        const res = await fetch('/api/auth/google', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error?.message ?? t('l.signInFailed'));
+        let res: Response;
+        try {
+          res = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential }),
+          });
+        } catch {
+          // Server tidak menjawab sama sekali. Tanpa cabang ini pengguna melihat
+          // pesan parser JSON yang tidak menjelaskan apa pun.
+          throw new Error(t('l.serverDown'));
+        }
+
+        // Balasan bisa saja bukan JSON — misalnya galat proxy saat backend mati.
+        const isJson = res.headers.get('content-type')?.includes('application/json');
+        const data = isJson ? await res.json() : null;
+        if (!res.ok || !data) {
+          throw new Error(data?.error?.message ?? t('l.serverDown'));
+        }
         signIn({
           name: data.user.name,
           email: data.user.email,
