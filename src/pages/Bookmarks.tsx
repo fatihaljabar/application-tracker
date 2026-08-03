@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select, Textarea, Segmented } from '../components/ui';
 import { SOURCES } from '../lib/constants';
-import type { Bookmark } from '../lib/types';
+import type { Bookmark } from '@shared/types';
 import { cx, daysUntil, fmtDate, todayISO, uid } from '../lib/utils';
 
 const blank = (): Bookmark => ({

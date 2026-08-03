@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, Select, Textarea, Segmented } from '../components/ui';
 import { REMINDER_ICON, REMINDER_TYPES } from '../lib/constants';
-import type { Reminder, ReminderType } from '../lib/types';
+import type { Reminder, ReminderType } from '@shared/types';
 import { cx, fmtDateTime, relTime, uid } from '../lib/utils';
 
 const blank = (): Reminder => ({

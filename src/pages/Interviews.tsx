@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select, Textarea } from '../components/ui';
-import type { InterviewNote } from '../lib/types';
+import type { InterviewNote } from '@shared/types';
 import { fmtDate, todayISO, uid } from '../lib/utils';
 
 const blank = (appId = ''): InterviewNote => ({

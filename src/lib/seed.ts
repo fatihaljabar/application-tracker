@@ -1,4 +1,4 @@
-import type { DB } from './types';
+import type { DB } from '@shared/types';
 import { DEFAULT_TAGS } from './constants';
 
 const d = (offset: number) => {

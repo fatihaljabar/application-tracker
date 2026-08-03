@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, Progress, SearchInput, Select, Textarea } from '../components/ui';
 import { PREP_STATUSES } from '../lib/constants';
-import type { CompanyWish, PrepStatus } from '../lib/types';
+import type { CompanyWish, PrepStatus } from '@shared/types';
 import { cx, daysUntil, fmtDate, uid } from '../lib/utils';
 
 const PREP_COLOR: Record<PrepStatus, string> = {
