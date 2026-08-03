@@ -75,7 +75,7 @@ export default function AppDetail({
               }}
               options={STATUS_KEYS.map((s) => ({
                 value: s,
-                label: t('status.' + s),
+                label: t(`status.${s}`),
                 color: statusMeta(s).color,
               }))}
             />
@@ -87,7 +87,7 @@ export default function AppDetail({
 
         <div className="mt-4 flex gap-1 rounded-full bg-[var(--surface-2)] p-1 text-[12.5px]">
           {(['info', 'timeline', 'docs'] as const).map((k) => (
-            <button
+            <button type="button"
               key={k}
               onClick={() => setTab(k)}
               className={
@@ -229,7 +229,7 @@ export default function AppDetail({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-[var(--ink)]">{d.label}</p>
                     <p className="truncate text-[11.5px] text-[var(--ink-muted)]">
-                      {t('doc.cat.' + d.category)} · {d.version} · {fileSize(d.size)}
+                      {t(`doc.cat.${d.category}`)} · {d.version} · {fileSize(d.size)}
                     </p>
                   </div>
                   {d.dataUrl && (

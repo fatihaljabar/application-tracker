@@ -31,7 +31,7 @@ export default function Bookmarks() {
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
     return db.bookmarks
-      .filter((b) => !term || (b.company + ' ' + b.position + ' ' + b.note).toLowerCase().includes(term))
+      .filter((b) => !term || (`${b.company} ${b.position} ${b.note}`).toLowerCase().includes(term))
       .filter((b) => filter !== 'fav' || b.favorite)
       .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.savedAt.localeCompare(a.savedAt));
   }, [db.bookmarks, q, filter]);
@@ -44,7 +44,7 @@ export default function Bookmarks() {
     setErr(e);
     if (Object.keys(e).length) return;
     saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() });
-    toast(t('c.save') + ' ✓');
+    toast(`${t('c.save')} ✓`);
     setOpen(false);
   };
 
@@ -128,7 +128,7 @@ export default function Bookmarks() {
                     </h3>
                     <p className="truncate text-[12.5px] text-[var(--ink-muted)]">{b.position}</p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => toggleBookmarkFav(b.id)}
                     className={cx(
                       'grid h-8 w-8 shrink-0 place-items-center rounded-full transition-all duration-200 cursor-pointer',
@@ -173,7 +173,7 @@ export default function Bookmarks() {
                     </a>
                   )}
                   <div className="flex-1" />
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setForm(b);
                       setErr({});
@@ -183,7 +183,7 @@ export default function Bookmarks() {
                   >
                     <Icon name="fi-rr-pencil" className="text-[11px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setConfirmId(b.id)}
                     className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >

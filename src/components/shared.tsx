@@ -14,10 +14,10 @@ export function StatusPill({ status, size = 'md' }: { status: Status; size?: 'sm
         'inline-flex items-center gap-1.5 rounded-full font-medium leading-none',
         size === 'sm' ? 'px-2 py-[5px] text-[10.5px]' : 'px-2.5 py-1.5 text-[11.5px]',
       )}
-      style={{ color: meta.color, background: meta.color + '17' }}
+      style={{ color: meta.color, background: `${meta.color}17` }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
-      {t('status.' + status)}
+      {t(`status.${status}`)}
     </span>
   );
 }
@@ -36,16 +36,32 @@ export function TagChip({
   const { db } = useStore();
   const color = db.tags.find((x) => x.name === name)?.color ?? '#8d887d';
   return (
+    // Pembungkus tidak bisa jadi <button> karena tombol hapus bersarang di dalamnya
+    // (tombol di dalam tombol bukan HTML yang sah). Peran dan fokus ditambahkan manual,
+    // dan hanya ketika chip-nya memang bisa diklik.
+    // biome-ignore lint/a11y/noStaticElementInteractions: peran, fokus, dan handler papan ketik diberikan bersamaan hanya ketika onClick ada. Aturan ini tidak bisa membuktikan hubungan bersyarat itu secara statis.
     <span
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       className={cx(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none transition-all duration-200',
         onClick && 'cursor-pointer hover:brightness-95',
       )}
       style={{
         color: active === false ? 'var(--ink-muted)' : color,
-        background: active === false ? 'transparent' : color + '14',
-        borderColor: active === false ? 'var(--line)' : color + '33',
+        background: active === false ? 'transparent' : `${color}14`,
+        borderColor: active === false ? 'var(--line)' : `${color}33`,
       }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />

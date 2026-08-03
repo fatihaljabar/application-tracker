@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Field, Input, Modal, Select, Textarea, Icon } from './ui';
 import { TagPicker } from './shared';
 import { useStore } from '../lib/store';
-import { JOB_TYPES, SOURCES, STATUS_KEYS, STATUSES, WORK_TYPES } from '../lib/constants';
+import { JOB_TYPES, SOURCES, STATUS_KEYS, statusMeta, WORK_TYPES } from '../lib/constants';
 import type { Application, JobType, Status, WorkType } from '../lib/types';
 import { cx, fileSize, todayISO } from '../lib/utils';
 
@@ -217,8 +217,8 @@ export default function ApplicationForm({
               onChange={(v) => set('status', v as Status)}
               options={STATUS_KEYS.map((s) => ({
                 value: s,
-                label: t('status.' + s),
-                color: STATUSES.find((x) => x.key === s)!.color,
+                label: t(`status.${s}`),
+                color: statusMeta(s).color,
               }))}
             />
           </Field>
@@ -329,7 +329,7 @@ export default function ApplicationForm({
                     {doc.label}
                   </span>
                   <span className="block truncate text-[11.5px] text-[var(--ink-muted)]">
-                    {t('doc.cat.' + doc.category)} · {doc.version} · {fileSize(doc.size)}
+                    {t(`doc.cat.${doc.category}`)} · {doc.version} · {fileSize(doc.size)}
                   </span>
                 </span>
               </button>

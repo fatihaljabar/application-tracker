@@ -79,7 +79,7 @@ export default function Login() {
                 {t('l.choose')}
               </h2>
               <p className="mt-1.5 text-[13px] text-[var(--ink-muted)]">{t('l.chooseDesc')}</p>
-              <button
+              <button type="button"
                 onClick={() => setChooser(true)}
                 className="mt-7 flex w-full items-center justify-center gap-3 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-5 py-3.5 text-[14px] font-medium text-[var(--ink)] transition-all duration-200 hover:bg-[var(--surface-2)] active:scale-[0.985] cursor-pointer"
               >
@@ -106,7 +106,7 @@ export default function Login() {
             </>
           ) : (
             <div className="anim-fade">
-              <button
+              <button type="button"
                 onClick={() => setChooser(false)}
                 className="mb-5 inline-flex items-center gap-1.5 text-[12.5px] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] cursor-pointer"
               >
@@ -117,7 +117,7 @@ export default function Login() {
               </h2>
               <div className="mt-5 space-y-2">
                 {ACCOUNTS.map((a) => (
-                  <button
+                  <button type="button"
                     key={a.email}
                     onClick={() => enter(a.name, a.email, 'google')}
                     className="flex w-full items-center gap-3.5 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3.5 text-left transition-all duration-200 hover:border-[var(--line-strong)] hover:bg-[var(--bg-soft)] active:scale-[0.99] cursor-pointer"

@@ -28,7 +28,7 @@ export default function Timeline() {
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
     return db.activities
-      .filter((a) => !term || (a.title + ' ' + a.description).toLowerCase().includes(term))
+      .filter((a) => !term || (`${a.title} ${a.description}`).toLowerCase().includes(term))
       .filter((a) => !type || a.type === type)
       .filter((a) => !appId || a.appId === appId)
       .sort((a, b) => +new Date(b.date) - +new Date(a.date));
@@ -53,7 +53,7 @@ export default function Timeline() {
       type: form.type,
       title: form.title.trim(),
       description: form.description.trim(),
-      date: new Date(form.date + 'T' + new Date().toTimeString().slice(0, 5)).toISOString(),
+      date: new Date(`${form.date}T${new Date().toTimeString().slice(0, 5)}`).toISOString(),
     });
     toast(t('t.added'));
     setOpen(false);
@@ -80,7 +80,7 @@ export default function Timeline() {
           value={type}
           onChange={setType}
           placeholder={t('f.type')}
-          options={[{ value: '', label: t('c.all') }, ...TYPES.map((x) => ({ value: x, label: t('t.type.' + x) }))]}
+          options={[{ value: '', label: t('c.all') }, ...TYPES.map((x) => ({ value: x, label: t(`t.type.${x}`) }))]}
         />
         <Select
           className="sm:w-[190px]"
@@ -108,7 +108,7 @@ export default function Timeline() {
                     month: 'long',
                     year: 'numeric',
                     timeZone: tz,
-                  }).format(new Date(day + 'T00:00:00'))}
+                  }).format(new Date(`${day}T00:00:00`))}
                 </span>
                 <span className="h-px flex-1 bg-[var(--line)]" />
               </div>
@@ -139,7 +139,7 @@ export default function Timeline() {
                               )}
                             </p>
                           </div>
-                          <button
+                          <button type="button"
                             onClick={() => setConfirmId(a.id)}
                             className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--ink-muted)] opacity-0 transition-all duration-200 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] group-hover:opacity-100 cursor-pointer"
                           >
@@ -184,7 +184,7 @@ export default function Timeline() {
               <Select
                 value={form.type}
                 onChange={(v) => setForm((f) => ({ ...f, type: v as ActivityType }))}
-                options={TYPES.map((x) => ({ value: x, label: t('t.type.' + x) }))}
+                options={TYPES.map((x) => ({ value: x, label: t(`t.type.${x}`) }))}
               />
             </Field>
             <Field label={t('f.date')}>

@@ -21,12 +21,12 @@ export default function Toaster() {
           >
             <span
               className="grid h-7 w-7 shrink-0 place-items-center rounded-full"
-              style={{ background: tone.color + '1f', color: tone.color }}
+              style={{ background: `${tone.color}1f`, color: tone.color }}
             >
               <Icon name={tone.icon} className="text-[12px]" />
             </span>
             <p className="flex-1 text-[13px] leading-snug text-[var(--ink)]">{t.message}</p>
-            <button
+            <button type="button"
               onClick={() => dismissToast(t.id)}
               className="grid h-6 w-6 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
             >
