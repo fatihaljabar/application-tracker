@@ -7,7 +7,7 @@ export const todayISO = () => new Date().toISOString().slice(0, 10);
 export function fmtDate(value: string, lang: 'id' | 'en', tz?: string) {
   if (!value) return '—';
   const d = new Date(value.length <= 10 ? value + 'T00:00:00' : value);
-  if (isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(lang === 'id' ? 'id-ID' : 'en-GB', {
     day: 'numeric',
     month: 'short',
@@ -19,7 +19,7 @@ export function fmtDate(value: string, lang: 'id' | 'en', tz?: string) {
 export function fmtDateTime(value: string, lang: 'id' | 'en', tz?: string) {
   if (!value) return '—';
   const d = new Date(value);
-  if (isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat(lang === 'id' ? 'id-ID' : 'en-GB', {
     day: 'numeric',
     month: 'short',
@@ -31,7 +31,7 @@ export function fmtDateTime(value: string, lang: 'id' | 'en', tz?: string) {
 }
 
 export function fmtMoney(n: number | null) {
-  if (n === null || n === undefined || isNaN(n)) return '';
+  if (n === null || n === undefined || Number.isNaN(n)) return '';
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + ' jt';
   if (n >= 1000) return (n / 1000).toFixed(0) + ' rb';
   return String(n);
@@ -46,13 +46,13 @@ export function salaryLabel(min: number | null, max: number | null) {
 export function daysUntil(value: string) {
   if (!value) return null;
   const d = new Date(value.length <= 10 ? value + 'T23:59:59' : value);
-  if (isNaN(d.getTime())) return null;
+  if (Number.isNaN(d.getTime())) return null;
   return Math.ceil((d.getTime() - Date.now()) / 86400000);
 }
 
 export function relTime(value: string, lang: 'id' | 'en') {
   const d = new Date(value.length <= 10 ? value + 'T00:00:00' : value);
-  if (isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) return '—';
   const diff = Math.round((d.getTime() - Date.now()) / 1000);
   const abs = Math.abs(diff);
   const rtf = new Intl.RelativeTimeFormat(lang === 'id' ? 'id' : 'en', { numeric: 'auto' });

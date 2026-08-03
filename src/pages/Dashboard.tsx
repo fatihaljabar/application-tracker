@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
-import { PageHeader, StatusPill, CompanyAvatar } from '../components/shared';
+import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Button, Icon, Progress, SectionTitle, Segmented, Empty } from '../components/ui';
 import ApplicationForm from '../components/ApplicationForm';
 import { ACTIVITY_ICON, REMINDER_ICON, STATUSES, statusMeta } from '../lib/constants';
