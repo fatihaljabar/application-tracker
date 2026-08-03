@@ -5,7 +5,7 @@ import { Button, Icon, SearchInput } from '../components/ui';
 import ApplicationForm from '../components/ApplicationForm';
 import AppDetail from '../components/AppDetail';
 import { STATUSES } from '../lib/constants';
-import type { Application, Status } from '../lib/types';
+import type { Application, Status } from '@shared/types';
 import { cx, daysUntil, fmtDate } from '../lib/utils';
 
 export default function Pipeline() {

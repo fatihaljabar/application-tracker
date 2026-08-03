@@ -21,7 +21,7 @@ import type {
   Status,
   Tag,
   UserProfile,
-} from './types';
+} from '@shared/types';
 import { seedDB } from './seed';
 import { translate } from './i18n';
 import { uid } from './utils';

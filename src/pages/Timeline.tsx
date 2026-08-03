@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select, Textarea } from '../components/ui';
 import { ACTIVITY_ICON } from '../lib/constants';
-import type { ActivityType } from '../lib/types';
+import type { ActivityType } from '@shared/types';
 import { fmtDateTime, relTime, todayISO } from '../lib/utils';
 
 const TYPES: ActivityType[] = ['created', 'status', 'email', 'interview', 'test', 'followup', 'offer', 'note', 'document'];

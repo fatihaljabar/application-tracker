@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
-import type { Application } from '../lib/types';
+import type { Application } from '@shared/types';
 import { Badge, Button, Icon, Modal, Select } from './ui';
 import { CompanyAvatar, StatusPill, TagChip } from './shared';
 import { STATUS_KEYS, ACTIVITY_ICON, statusMeta } from '../lib/constants';

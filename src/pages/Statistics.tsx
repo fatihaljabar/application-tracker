@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Empty, Icon, Progress, SectionTitle } from '../components/ui';
 import { FUNNEL_ORDER, statusMeta, STATUSES } from '../lib/constants';
-import type { Status } from '../lib/types';
+import type { Status } from '@shared/types';
 
 const RANK: Record<Status, number> = {
   wishlist: 0,

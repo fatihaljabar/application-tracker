@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Application, Status } from '../lib/types';
+import type { Application, Status } from '@shared/types';
 import { statusMeta } from '../lib/constants';
 import { useStore } from '../lib/store';
 import { cx, initials } from '../lib/utils';

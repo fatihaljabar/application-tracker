@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select } from '../components/ui';
 import { DOC_CATEGORIES } from '../lib/constants';
-import type { DocCategory, DocFile } from '../lib/types';
+import type { DocCategory, DocFile } from '@shared/types';
 import { cx, fileSize, fmtDate } from '../lib/utils';
 
 const CAT_ICON: Record<DocCategory, string> = {

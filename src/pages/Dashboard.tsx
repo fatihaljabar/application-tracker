@@ -6,7 +6,7 @@ import { Button, Icon, Progress, SectionTitle, Segmented, Empty } from '../compo
 import ApplicationForm from '../components/ApplicationForm';
 import { ACTIVITY_ICON, REMINDER_ICON, STATUSES, statusMeta } from '../lib/constants';
 import { addDays, fmtDate, fmtDateTime, relTime, startOfWeek } from '../lib/utils';
-import type { Status } from '../lib/types';
+import type { Status } from '@shared/types';
 
 function Stat({
   icon,

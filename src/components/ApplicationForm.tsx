@@ -3,7 +3,7 @@ import { Button, Field, Input, Modal, Select, Textarea, Icon } from './ui';
 import { TagPicker } from './shared';
 import { useStore } from '../lib/store';
 import { JOB_TYPES, SOURCES, STATUS_KEYS, statusMeta, WORK_TYPES } from '../lib/constants';
-import type { Application, JobType, Status, WorkType } from '../lib/types';
+import type { Application, JobType, Status, WorkType } from '@shared/types';
 import { cx, fileSize, todayISO } from '../lib/utils';
 
 const blank = (): Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'history'> => ({

@@ -15,7 +15,7 @@ import {
 import ApplicationForm from '../components/ApplicationForm';
 import AppDetail from '../components/AppDetail';
 import { STATUS_KEYS, WORK_TYPES, statusMeta } from '../lib/constants';
-import type { Application } from '../lib/types';
+import type { Application } from '@shared/types';
 import { cx, daysUntil, fmtDate, salaryLabel } from '../lib/utils';
 
 export default function Applications() {

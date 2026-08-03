@@ -67,12 +67,7 @@ export interface Activity {
   date: string;
 }
 
-export type ReminderType =
-  | 'interview'
-  | 'technical_test'
-  | 'followup'
-  | 'deadline'
-  | 'cv_validity';
+export type ReminderType = 'interview' | 'technical_test' | 'followup' | 'deadline' | 'cv_validity';
 
 export interface Reminder {
   id: string;
