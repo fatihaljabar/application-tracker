@@ -42,6 +42,15 @@ import {
  */
 
 const id = () => char('id', { length: 36 }).primaryKey();
+
+/**
+ * Semua kolom waktu berpresisi milidetik (fsp 3).
+ *
+ * Tanpa itu MySQL MEMBULATKAN detik pecahan ke atas: 10:00:00.567 tersimpan
+ * jadi 10:00:01. Nilai di database lalu terlihat lebih baru daripada yang
+ * dipegang klien, dan deteksi konflik antar tab menolak perubahan yang sah —
+ * membuat lamaran lalu langsung memindahkan statusnya selalu gagal.
+ */
 const userRef = () =>
   char('user_id', { length: 36 })
     .notNull()
@@ -56,10 +65,10 @@ export const users = mysqlTable(
     email: varchar('email', { length: 255 }).notNull(),
     name: varchar('name', { length: 255 }).notNull(),
     avatarUrl: varchar('avatar_url', { length: 512 }),
-    createdAt: datetime('created_at').notNull(),
+    createdAt: datetime('created_at', { fsp: 3 }).notNull(),
     // Dipakai untuk KPI "berapa orang membuka aplikasi 7 hari terakhir" dan untuk
     // menemukan akun tak aktif 24 bulan (PRD § 6.19).
-    lastSeenAt: datetime('last_seen_at').notNull(),
+    lastSeenAt: datetime('last_seen_at', { fsp: 3 }).notNull(),
   },
   (t) => [index('idx_last_seen').on(t.lastSeenAt)],
 );
@@ -108,10 +117,10 @@ export const applications = mysqlTable(
     tags: json('tags').$type<string[]>().notNull(),
     archived: boolean('archived').notNull().default(false),
     favorite: boolean('favorite').notNull().default(false),
-    createdAt: datetime('created_at').notNull(),
+    createdAt: datetime('created_at', { fsp: 3 }).notNull(),
     // Dipakai untuk deteksi konflik antar tab: PUT yang membawa updatedAt lebih
     // lama dari baris di database ditolak dengan 409 (TECHNICAL.md § 7).
-    updatedAt: datetime('updated_at').notNull(),
+    updatedAt: datetime('updated_at', { fsp: 3 }).notNull(),
   },
   (t) => [
     index('idx_user_status').on(t.userId, t.status),
@@ -135,7 +144,7 @@ export const statusHistory = mysqlTable(
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
     status: mysqlEnum('status', STATUS_VALUES).notNull(),
-    at: datetime('at').notNull(),
+    at: datetime('at', { fsp: 3 }).notNull(),
   },
   (t) => [index('idx_app').on(t.applicationId, t.at)],
 );
@@ -152,7 +161,7 @@ export const activities = mysqlTable(
     type: mysqlEnum('type', ACTIVITY_TYPE_VALUES).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     description: text('description').notNull(),
-    date: datetime('date').notNull(),
+    date: datetime('date', { fsp: 3 }).notNull(),
   },
   (t) => [index('idx_user_date').on(t.userId, t.date)],
 );
@@ -168,7 +177,7 @@ export const reminders = mysqlTable(
     }),
     type: mysqlEnum('type', REMINDER_TYPE_VALUES).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
-    datetime: datetime('datetime').notNull(),
+    datetime: datetime('datetime', { fsp: 3 }).notNull(),
     notes: text('notes').notNull(),
     done: boolean('done').notNull().default(false),
     // Penanda reminder otomatis, contoh "followup:{application_id}". Unik per
@@ -176,7 +185,7 @@ export const reminders = mysqlTable(
     autoKey: varchar('auto_key', { length: 128 }),
     // Diisi setelah email berhasil terkirim. Kolom inilah yang menjamin satu
     // kejadian menghasilkan paling banyak satu email (PRD § 6.13).
-    sentAt: datetime('sent_at'),
+    sentAt: datetime('sent_at', { fsp: 3 }),
   },
   (t) => [
     unique('uniq_auto').on(t.userId, t.autoKey),
@@ -206,7 +215,7 @@ export const documents = mysqlTable(
     // klien mengonfirmasi unggahan. Baris pending >24 jam dibersihkan cron,
     // supaya unggahan gagal tidak memakan kuota pengguna (PRD § 6.7).
     state: mysqlEnum('state', ['pending', 'ready']).notNull().default('pending'),
-    uploadedAt: datetime('uploaded_at').notNull(),
+    uploadedAt: datetime('uploaded_at', { fsp: 3 }).notNull(),
   },
   (t) => [index('idx_user_state').on(t.userId, t.state)],
 );
@@ -264,7 +273,7 @@ export const bookmarks = mysqlTable(
     deadline: date('deadline', { mode: 'string' }),
     note: text('note').notNull(),
     favorite: boolean('favorite').notNull().default(false),
-    savedAt: datetime('saved_at').notNull(),
+    savedAt: datetime('saved_at', { fsp: 3 }).notNull(),
   },
   (t) => [index('idx_user').on(t.userId)],
 );
