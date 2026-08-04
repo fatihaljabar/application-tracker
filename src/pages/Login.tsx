@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/ui';
 import { loadGoogleIdentity } from '../lib/google';
+import { initials } from '../lib/utils';
 import { useStore } from '../lib/store';
 
 export default function Login() {
@@ -40,7 +41,9 @@ export default function Login() {
           name: data.user.name,
           email: data.user.email,
           provider: 'google',
-          avatar: data.user.avatarUrl ?? '',
+          // Antarmuka menampilkan field ini sebagai teks di dalam lingkaran,
+          // jadi isinya inisial — bukan URL foto Google.
+          avatar: initials(data.user.name),
           since: data.user.since,
         });
         toast(t('l.signedIn'));

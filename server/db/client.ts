@@ -20,6 +20,10 @@ const pool = mysql.createPool({
   idleTimeout: 60_000,
   waitForConnections: true,
   timezone: 'Z',
+  // Kolom DATE dikembalikan apa adanya sebagai 'YYYY-MM-DD'.
+  // Kalau dibiarkan jadi objek Date, tanggal lamaran bisa bergeser sehari
+  // tergantung zona waktu server — dan pergeseran itu diam, tidak ada galat.
+  dateStrings: ['DATE'],
 });
 
 export const db = drizzle(pool);
