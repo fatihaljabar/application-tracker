@@ -17,7 +17,7 @@ const blank = (): Reminder => ({
 });
 
 export default function Reminders() {
-  const { t, db, lang, saveReminder, deleteReminder, toggleReminder, toast } = useStore();
+  const { t, db, lang, saveReminder, deleteReminder, toggleReminder } = useStore();
   const tz = db.settings.timezone;
   const [filter, setFilter] = useState('open');
   const [open, setOpen] = useState(false);
@@ -45,8 +45,8 @@ export default function Reminders() {
       id: form.id || uid(),
       title: form.title.trim(),
       datetime: new Date(form.datetime).toISOString(),
-    });
-    toast(t('r.saved'));
+    }, t('r.saved'))
+    
     setOpen(false);
   };
 

@@ -43,8 +43,8 @@ export default function Bookmarks() {
     if (form.url && !/^https?:\/\//i.test(form.url)) e.url = 'URL harus diawali http:// atau https://';
     setErr(e);
     if (Object.keys(e).length) return;
-    saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() });
-    toast(`${t('c.save')} ✓`);
+    saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() }, `${t('c.save')} ✓`)
+    
     setOpen(false);
   };
 

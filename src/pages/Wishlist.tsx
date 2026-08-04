@@ -30,7 +30,7 @@ const blank = (): CompanyWish => ({
 });
 
 export default function Wishlist() {
-  const { t, db, lang, saveWish, deleteWish, toast } = useStore();
+  const { t, db, lang, saveWish, deleteWish } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -51,8 +51,8 @@ export default function Wishlist() {
     if (!form.company.trim()) e.company = `${t('f.company')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length) return;
-    saveWish({ ...form, id: form.id || uid(), company: form.company.trim() });
-    toast(`${t('c.save')} ✓`);
+    saveWish({ ...form, id: form.id || uid(), company: form.company.trim() }, `${t('c.save')} ✓`)
+    
     setOpen(false);
   };
 

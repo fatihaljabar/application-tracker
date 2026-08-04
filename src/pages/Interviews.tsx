@@ -20,7 +20,7 @@ const blank = (appId = ''): InterviewNote => ({
 const STAGES = ['Screening', 'HR Interview', 'User Interview', 'Technical Interview', 'Final Interview'];
 
 export default function Interviews() {
-  const { t, db, lang, saveNote, deleteNote, toast } = useStore();
+  const { t, db, lang, saveNote, deleteNote } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -54,8 +54,8 @@ export default function Interviews() {
       ...form,
       id: form.id || uid(),
       qa: form.qa.filter((x) => x.q.trim() || x.a.trim()),
-    });
-    toast(t('i.saved'));
+    }, t('i.saved'))
+    
     setOpen(false);
   };
 

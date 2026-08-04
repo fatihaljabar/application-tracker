@@ -1,4 +1,9 @@
-export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+/**
+ * Id dibuat di sisi klien supaya antarmuka bisa menampilkan hasil tanpa
+ * menunggu balasan server. Wajib UUID: kolom id di database CHAR(36), dan
+ * server menolak apa pun yang bukan UUID.
+ */
+export const uid = () => crypto.randomUUID();
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 

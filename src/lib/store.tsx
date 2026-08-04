@@ -22,31 +22,46 @@ import type {
   Tag,
   UserProfile,
 } from '@shared/types';
-import { seedDB } from './seed';
+import { ApiError, api, del, patch, post, put } from './api';
 import { translate } from './i18n';
 import { uid } from './utils';
 
-const KEY = 'lacak-lamaran-db-v1';
+/**
+ * Sumber data pindah dari localStorage ke server. Bentuk DB di memori sengaja
+ * tidak berubah, karena itulah yang membuat 12 halaman tidak perlu disentuh
+ * sama sekali (TECHNICAL.md § 7).
+ *
+ * Aturan mutasi: **panggil API dulu, baru perbarui tampilan.** Pola optimistis
+ * menuntut jalur pengembalian di setiap fungsi, dan satu jalur yang keliru
+ * menghasilkan tampilan yang menyatakan data tersimpan padahal gagal. Menunggu
+ * 100–300 ms untuk sebuah form tidak terasa; kehilangan data terasa selamanya.
+ *
+ * Satu pengecualian: `moveApp`. Kartu yang diam sesaat setelah dilepas terasa
+ * rusak, jadi di sana tampilan berubah lebih dulu dan dikembalikan bila gagal.
+ */
 
-function load(): DB {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as DB;
-      const base = seedDB();
-      return { ...base, ...parsed, settings: { ...base.settings, ...parsed.settings } };
-    }
-  } catch {
-    /* ignore */
-  }
-  return seedDB();
-}
-
-/** Fungsi murni, sengaja di luar komponen supaya tidak dibuat ulang tiap render. */
-const pushActivity = (d: DB, a: Omit<Activity, 'id'>): DB => ({
-  ...d,
-  activities: [{ ...a, id: uid() }, ...d.activities],
-});
+const EMPTY: DB = {
+  apps: [],
+  activities: [],
+  reminders: [],
+  docs: [],
+  notes: [],
+  bookmarks: [],
+  wishes: [],
+  tags: [],
+  settings: {
+    theme: 'light',
+    language: 'id',
+    timezone: 'Asia/Jakarta',
+    weeklyTarget: 5,
+    monthlyTarget: 20,
+    emailNotif: true,
+    dailyReminder: true,
+    notifyEmail: '',
+    cvValidDays: 90,
+  },
+  user: null,
+};
 
 export interface Toast {
   id: string;
@@ -62,57 +77,52 @@ interface Ctx {
   toast: (message: string, tone?: Toast['tone']) => void;
   dismissToast: (id: string) => void;
   // apps
-  saveApp: (app: Application) => void;
-  addApp: (app: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'history'>) => Application;
+  saveApp: (app: Application, done?: string) => void;
+  addApp: (app: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'history'>, done?: string) => void;
   deleteApp: (id: string) => void;
   duplicateApp: (id: string) => void;
   toggleArchive: (id: string) => void;
   toggleFavorite: (id: string) => void;
-  moveApp: (id: string, status: Status) => void;
+  moveApp: (id: string, status: Status, done?: string) => void;
   // activities
   addActivity: (a: Omit<Activity, 'id'>) => void;
   deleteActivity: (id: string) => void;
   // reminders
-  saveReminder: (r: Reminder) => void;
+  saveReminder: (r: Reminder, done?: string) => void;
   deleteReminder: (id: string) => void;
   toggleReminder: (id: string) => void;
   // docs
   addDoc: (d: Omit<DocFile, 'id'>) => void;
   deleteDoc: (id: string) => void;
   // notes
-  saveNote: (n: InterviewNote) => void;
+  saveNote: (n: InterviewNote, done?: string) => void;
   deleteNote: (id: string) => void;
   // bookmarks
-  saveBookmark: (b: Bookmark) => void;
+  saveBookmark: (b: Bookmark, done?: string) => void;
   deleteBookmark: (id: string) => void;
   toggleBookmarkFav: (id: string) => void;
   // wishes
-  saveWish: (w: CompanyWish) => void;
+  saveWish: (w: CompanyWish, done?: string) => void;
   deleteWish: (id: string) => void;
   // tags
   addTag: (t: Tag) => void;
   deleteTag: (name: string) => void;
   // settings & auth
-  updateSettings: (patch: Partial<Settings>) => void;
+  updateSettings: (patch: Partial<Settings>, done?: string) => void;
   signIn: (user: UserProfile) => void;
   signOut: () => void;
-  resetData: () => void;
+  resetData: (done?: string) => void;
 }
 
 const StoreCtx = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [db, setDb] = useState<DB>(load);
+  const [db, setDb] = useState<DB>(EMPTY);
+  const [ready, setReady] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Record<string, number>>({});
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(db));
-    } catch {
-      /* quota */
-    }
-  }, [db]);
+  const dbRef = useRef(db);
+  dbRef.current = db;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -129,20 +139,98 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     delete timers.current[id];
   }, []);
 
-  const toast = useCallback(
-    (message: string, tone: Toast['tone'] = 'success') => {
-      const id = uid();
-      setToasts((prev) => [...prev, { id, message, tone }]);
-      timers.current[id] = window.setTimeout(() => {
-        setToasts((prev) => prev.filter((x) => x.id !== id));
-      }, 3200);
+  const toast = useCallback((message: string, tone: Toast['tone'] = 'success') => {
+    const id = uid();
+    setToasts((prev) => [...prev, { id, message, tone }]);
+    timers.current[id] = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((x) => x.id !== id));
+    }, 3200);
+  }, []);
+
+  const loadState = useCallback(async () => {
+    const state = await api<DB>('/state');
+    setDb(state);
+  }, []);
+
+  // Muat sekali saat aplikasi dibuka. Sesi yang tidak sah menghasilkan 401,
+  // dan itu berarti tampilkan halaman masuk — bukan galat.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const me = await api<{ user: { name: string } | null }>('/auth/me');
+        if (alive && me.user) await loadState();
+      } catch (e) {
+        if (alive && !(e instanceof ApiError && e.isUnauthenticated)) {
+          toast(e instanceof Error ? e.message : 'Gagal memuat data.', 'error');
+        }
+      } finally {
+        if (alive) setReady(true);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [loadState, toast]);
+
+  /**
+   * Menjalankan satu mutasi: panggil API, dan hanya kalau berhasil perbarui
+   * tampilan. Kegagalan selalu terlihat pengguna — tidak ada yang ditelan.
+   */
+  const run = useCallback(
+    async <R,>(call: () => Promise<R>, apply: (d: DB, result: R) => DB, successMessage?: string) => {
+      try {
+        const result = await call();
+        setDb((d) => apply(d, result));
+        if (successMessage) toast(successMessage);
+      } catch (e) {
+        if (e instanceof ApiError && e.isUnauthenticated) {
+          setDb((d) => ({ ...d, user: null }));
+          toast('Sesi berakhir. Silakan masuk lagi.', 'error');
+          return;
+        }
+        if (e instanceof ApiError && e.isConflict) {
+          // Tab lain sudah mengubah data ini. Tarik ulang supaya tampilan
+          // menunjukkan keadaan sebenarnya, bukan versi yang sudah basi.
+          toast(e.message, 'error');
+          await loadState().catch(() => {});
+          return;
+        }
+        toast(e instanceof Error ? e.message : 'Gagal menyimpan.', 'error');
+      }
     },
-    [],
+    [toast, loadState],
   );
 
-  const patch = useCallback((fn: (d: DB) => DB) => setDb((prev) => fn(prev)), []);
-
   const value: Ctx = useMemo(() => {
+    const findApp = (id: string) => dbRef.current.apps.find((a) => a.id === id);
+
+    /** Bentuk yang dikirim ke server; server mengabaikan field turunan. */
+    const appPayload = (a: Application) => ({
+      id: a.id,
+      company: a.company,
+      position: a.position,
+      department: a.department,
+      location: a.location,
+      workType: a.workType,
+      jobType: a.jobType,
+      salaryMin: a.salaryMin,
+      salaryMax: a.salaryMax,
+      source: a.source,
+      url: a.url,
+      appliedDate: a.appliedDate,
+      deadline: a.deadline,
+      recruiterName: a.recruiterName,
+      recruiterEmail: a.recruiterEmail,
+      recruiterPhone: a.recruiterPhone,
+      notes: a.notes,
+      status: a.status,
+      tags: a.tags,
+      documentIds: a.documentIds,
+      archived: a.archived,
+      favorite: a.favorite,
+    });
+
     return {
       db,
       t,
@@ -150,7 +238,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toasts,
       toast,
       dismissToast,
-      addApp: (data) => {
+
+      addApp: (data, done) => {
         const now = new Date().toISOString();
         const app: Application = {
           ...data,
@@ -159,158 +248,380 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           updatedAt: now,
           history: data.status === 'wishlist' ? [] : [{ status: data.status, at: now }],
         };
-        patch((d) =>
-          pushActivity({ ...d, apps: [app, ...d.apps] }, {
-            appId: app.id,
-            type: 'created',
-            title: `${translate(d.settings.language, 't.type.created')} — ${app.company}`,
-            description: `${app.position}${app.location ? ` · ${app.location}` : ''}`,
-            date: now,
+        const activity: Activity = {
+          id: uid(),
+          appId: app.id,
+          type: 'created',
+          title: `${translate(lang, 't.type.created')} — ${app.company}`,
+          description: `${app.position}${app.location ? ` · ${app.location}` : ''}`,
+          date: now,
+        };
+        void run(
+          () =>
+            post<{ createdAt: string; updatedAt: string }>('/applications', {
+              ...appPayload(app),
+              activity: {
+                id: activity.id,
+                type: activity.type,
+                title: activity.title,
+                description: activity.description,
+              },
+            }),
+          // Stempel waktu diambil dari balasan server, bukan dari jam peramban.
+          // Kalau tidak, updatedAt lokal selalu lebih lama daripada yang tersimpan
+          // dan setiap perubahan berikutnya ditolak sebagai konflik palsu.
+          (d, r) => ({
+            ...d,
+            apps: [{ ...app, createdAt: r.createdAt, updatedAt: r.updatedAt }, ...d.apps],
+            activities: [activity, ...d.activities],
+          }),
+          done,
+        );
+      },
+
+      saveApp: (app, done) => {
+        void run(
+          () =>
+            put<{ updatedAt: string }>(`/applications/${app.id}`, {
+              ...appPayload(app),
+              updatedAt: app.updatedAt,
+            }),
+          (d, r) => ({
+            ...d,
+            apps: d.apps.map((a) => (a.id === app.id ? { ...app, updatedAt: r.updatedAt } : a)),
+          }),
+          done,
+        );
+      },
+
+      deleteApp: (id) => {
+        void run(
+          () => del(`/applications/${id}`),
+          (d) => ({
+            ...d,
+            apps: d.apps.filter((a) => a.id !== id),
+            activities: d.activities.filter((a) => a.appId !== id),
+            reminders: d.reminders.filter((r) => r.appId !== id),
+            notes: d.notes.filter((n) => n.appId !== id),
           }),
         );
-        return app;
       },
-      saveApp: (app) => {
-        patch((d) => ({
+
+      duplicateApp: (id) => {
+        const src = findApp(id);
+        if (!src) return;
+        const now = new Date().toISOString();
+        const copy: Application = {
+          ...src,
+          id: uid(),
+          company: `${src.company} (copy)`,
+          status: 'wishlist',
+          history: [],
+          archived: false,
+          createdAt: now,
+          updatedAt: now,
+        };
+        void run(
+          () => post<{ createdAt: string; updatedAt: string }>('/applications', appPayload(copy)),
+          (d, r) => ({
+            ...d,
+            apps: [{ ...copy, createdAt: r.createdAt, updatedAt: r.updatedAt }, ...d.apps],
+          }),
+        );
+      },
+
+      toggleArchive: (id) => {
+        const app = findApp(id);
+        if (!app) return;
+        const next = { ...app, archived: !app.archived };
+        void run(
+          () =>
+            put<{ updatedAt: string }>(`/applications/${id}`, {
+              ...appPayload(next),
+              updatedAt: app.updatedAt,
+            }),
+          (d, r) => ({
+            ...d,
+            apps: d.apps.map((a) => (a.id === id ? { ...next, updatedAt: r.updatedAt } : a)),
+          }),
+        );
+      },
+
+      toggleFavorite: (id) => {
+        const app = findApp(id);
+        if (!app) return;
+        const next = { ...app, favorite: !app.favorite };
+        void run(
+          () =>
+            put<{ updatedAt: string }>(`/applications/${id}`, {
+              ...appPayload(next),
+              updatedAt: app.updatedAt,
+            }),
+          (d, r) => ({
+            ...d,
+            apps: d.apps.map((a) => (a.id === id ? { ...next, updatedAt: r.updatedAt } : a)),
+          }),
+        );
+      },
+
+      /**
+       * Satu-satunya mutasi optimistis: kartu berpindah lebih dulu, karena
+       * kartu yang diam sesaat setelah dilepas terasa rusak. Kalau server
+       * menolak, kartu kembali ke kolom asalnya disertai pesan.
+       */
+      moveApp: (id, status, done) => {
+        const app = findApp(id);
+        if (!app || app.status === status) return;
+        const before = dbRef.current;
+        const now = new Date().toISOString();
+        const activity: Activity = {
+          id: uid(),
+          appId: id,
+          type: 'status',
+          title: `${app.company} → ${translate(lang, `status.${status}`)}`,
+          description: app.position,
+          date: now,
+        };
+        const updated: Application = {
+          ...app,
+          status,
+          updatedAt: now,
+          appliedDate:
+            !app.appliedDate && status !== 'wishlist' ? now.slice(0, 10) : app.appliedDate,
+          history: [...app.history, { status, at: now }],
+        };
+
+        setDb((d) => ({
           ...d,
-          apps: d.apps.map((a) =>
-            a.id === app.id ? { ...app, updatedAt: new Date().toISOString() } : a,
-          ),
+          apps: d.apps.map((a) => (a.id === id ? updated : a)),
+          activities: [activity, ...d.activities],
         }));
+
+        void (async () => {
+          try {
+            const r = await patch<{ updatedAt: string; appliedDate: string }>(`/applications/${id}/status`, {
+              status,
+              updatedAt: app.updatedAt,
+              activity: {
+                id: activity.id,
+                type: activity.type,
+                title: activity.title,
+                description: activity.description,
+              },
+            });
+            // Selaraskan dengan waktu server supaya perubahan berikutnya tidak
+            // dianggap konflik.
+            setDb((d) => ({
+              ...d,
+              apps: d.apps.map((a) =>
+                a.id === id
+                  ? { ...a, updatedAt: r.updatedAt, appliedDate: r.appliedDate || a.appliedDate }
+                  : a,
+              ),
+            }));
+            if (done) toast(done);
+          } catch (e) {
+            setDb(before);
+            if (e instanceof ApiError && e.isConflict) {
+              toast(e.message, 'error');
+              await loadState().catch(() => {});
+              return;
+            }
+            toast(e instanceof Error ? e.message : 'Gagal memindahkan status.', 'error');
+          }
+        })();
       },
-      deleteApp: (id) =>
-        patch((d) => ({
-          ...d,
-          apps: d.apps.filter((a) => a.id !== id),
-          activities: d.activities.filter((a) => a.appId !== id),
-          reminders: d.reminders.filter((r) => r.appId !== id),
-          notes: d.notes.filter((n) => n.appId !== id),
-        })),
-      duplicateApp: (id) =>
-        patch((d) => {
-          const src = d.apps.find((a) => a.id === id);
-          if (!src) return d;
-          const now = new Date().toISOString();
-          const copy: Application = {
-            ...src,
-            id: uid(),
-            company: `${src.company} (copy)`,
-            status: 'wishlist',
-            history: [],
-            archived: false,
-            createdAt: now,
-            updatedAt: now,
-          };
-          return { ...d, apps: [copy, ...d.apps] };
-        }),
-      toggleArchive: (id) =>
-        patch((d) => ({
-          ...d,
-          apps: d.apps.map((a) => (a.id === id ? { ...a, archived: !a.archived } : a)),
-        })),
-      toggleFavorite: (id) =>
-        patch((d) => ({
-          ...d,
-          apps: d.apps.map((a) => (a.id === id ? { ...a, favorite: !a.favorite } : a)),
-        })),
-      moveApp: (id, status) =>
-        patch((d) => {
-          const app = d.apps.find((a) => a.id === id);
-          if (!app || app.status === status) return d;
-          const now = new Date().toISOString();
-          const updated: Application = {
-            ...app,
-            status,
-            updatedAt: now,
-            appliedDate:
-              !app.appliedDate && status !== 'wishlist' ? now.slice(0, 10) : app.appliedDate,
-            history: [...app.history, { status, at: now }],
-          };
-          const next = { ...d, apps: d.apps.map((a) => (a.id === id ? updated : a)) };
-          return pushActivity(next, {
-            appId: id,
-            type: 'status',
-            title: `${app.company} → ${translate(d.settings.language, `status.${status}`)}`,
-            description: `${app.position}`,
-            date: now,
-          });
-        }),
-      addActivity: (a) => patch((d) => pushActivity(d, a)),
-      deleteActivity: (id) =>
-        patch((d) => ({ ...d, activities: d.activities.filter((x) => x.id !== id) })),
-      saveReminder: (r) =>
-        patch((d) => ({
-          ...d,
-          reminders: d.reminders.some((x) => x.id === r.id)
-            ? d.reminders.map((x) => (x.id === r.id ? r : x))
-            : [r, ...d.reminders],
-        })),
-      deleteReminder: (id) =>
-        patch((d) => ({ ...d, reminders: d.reminders.filter((x) => x.id !== id) })),
-      toggleReminder: (id) =>
-        patch((d) => ({
-          ...d,
-          reminders: d.reminders.map((x) => (x.id === id ? { ...x, done: !x.done } : x)),
-        })),
-      addDoc: (doc) => patch((d) => ({ ...d, docs: [{ ...doc, id: uid() }, ...d.docs] })),
-      deleteDoc: (id) =>
-        patch((d) => ({
-          ...d,
-          docs: d.docs.filter((x) => x.id !== id),
-          apps: d.apps.map((a) => ({ ...a, documentIds: a.documentIds.filter((x) => x !== id) })),
-        })),
-      saveNote: (n) =>
-        patch((d) => ({
-          ...d,
-          notes: d.notes.some((x) => x.id === n.id)
-            ? d.notes.map((x) => (x.id === n.id ? n : x))
-            : [n, ...d.notes],
-        })),
-      deleteNote: (id) => patch((d) => ({ ...d, notes: d.notes.filter((x) => x.id !== id) })),
-      saveBookmark: (b) =>
-        patch((d) => ({
-          ...d,
-          bookmarks: d.bookmarks.some((x) => x.id === b.id)
-            ? d.bookmarks.map((x) => (x.id === b.id ? b : x))
-            : [b, ...d.bookmarks],
-        })),
-      deleteBookmark: (id) =>
-        patch((d) => ({ ...d, bookmarks: d.bookmarks.filter((x) => x.id !== id) })),
-      toggleBookmarkFav: (id) =>
-        patch((d) => ({
-          ...d,
-          bookmarks: d.bookmarks.map((x) => (x.id === id ? { ...x, favorite: !x.favorite } : x)),
-        })),
-      saveWish: (w) =>
-        patch((d) => ({
-          ...d,
-          wishes: d.wishes.some((x) => x.id === w.id)
-            ? d.wishes.map((x) => (x.id === w.id ? w : x))
-            : [w, ...d.wishes],
-        })),
-      deleteWish: (id) => patch((d) => ({ ...d, wishes: d.wishes.filter((x) => x.id !== id) })),
-      addTag: (tag) =>
-        patch((d) =>
-          d.tags.some((x) => x.name.toLowerCase() === tag.name.toLowerCase())
-            ? d
-            : { ...d, tags: [...d.tags, tag] },
-        ),
-      deleteTag: (name) =>
-        patch((d) => ({
-          ...d,
-          tags: d.tags.filter((x) => x.name !== name),
-          apps: d.apps.map((a) => ({ ...a, tags: a.tags.filter((x) => x !== name) })),
-        })),
-      updateSettings: (p) => patch((d) => ({ ...d, settings: { ...d.settings, ...p } })),
-      signIn: (user) => patch((d) => ({ ...d, user })),
-      signOut: () => patch((d) => ({ ...d, user: null })),
-      resetData: () =>
-        setDb(() => {
-          const fresh = seedDB();
-          return fresh;
-        }),
+
+      addActivity: (a) => {
+        const activity: Activity = { ...a, id: uid() };
+        void run(
+          () =>
+            post('/activities', {
+              id: activity.id,
+              appId: activity.appId,
+              type: activity.type,
+              title: activity.title,
+              description: activity.description,
+              date: activity.date,
+            }),
+          (d) => ({ ...d, activities: [activity, ...d.activities] }),
+        );
+      },
+
+      deleteActivity: (id) => {
+        void run(
+          () => del(`/activities/${id}`),
+          (d) => ({ ...d, activities: d.activities.filter((x) => x.id !== id) }),
+        );
+      },
+
+      saveReminder: (r, done) => {
+        void run(
+          () => put(`/reminders/${r.id}`, r),
+          (d) => ({
+            ...d,
+            reminders: d.reminders.some((x) => x.id === r.id)
+              ? d.reminders.map((x) => (x.id === r.id ? r : x))
+              : [r, ...d.reminders],
+          }),
+          done,
+        );
+      },
+
+      deleteReminder: (id) => {
+        void run(
+          () => del(`/reminders/${id}`),
+          (d) => ({ ...d, reminders: d.reminders.filter((x) => x.id !== id) }),
+        );
+      },
+
+      toggleReminder: (id) => {
+        const r = dbRef.current.reminders.find((x) => x.id === id);
+        if (!r) return;
+        const next = { ...r, done: !r.done };
+        void run(
+          () => put(`/reminders/${id}`, next),
+          (d) => ({ ...d, reminders: d.reminders.map((x) => (x.id === id ? next : x)) }),
+        );
+      },
+
+      // Unggahan dokumen baru tersedia di M2; sampai saat itu tidak ada
+      // endpoint yang bisa dipanggil, jadi jangan berpura-pura berhasil.
+      addDoc: (_doc) => {
+        toast('Unggah dokumen belum tersedia.', 'info');
+      },
+      deleteDoc: (_id) => {
+        toast('Unggah dokumen belum tersedia.', 'info');
+      },
+
+      saveNote: (n, done) => {
+        void run(
+          () => put(`/notes/${n.id}`, n),
+          (d) => ({
+            ...d,
+            notes: d.notes.some((x) => x.id === n.id)
+              ? d.notes.map((x) => (x.id === n.id ? n : x))
+              : [n, ...d.notes],
+          }),
+          done,
+        );
+      },
+
+      deleteNote: (id) => {
+        void run(
+          () => del(`/notes/${id}`),
+          (d) => ({ ...d, notes: d.notes.filter((x) => x.id !== id) }),
+        );
+      },
+
+      saveBookmark: (b, done) => {
+        void run(
+          () => put(`/bookmarks/${b.id}`, b),
+          (d) => ({
+            ...d,
+            bookmarks: d.bookmarks.some((x) => x.id === b.id)
+              ? d.bookmarks.map((x) => (x.id === b.id ? b : x))
+              : [b, ...d.bookmarks],
+          }),
+          done,
+        );
+      },
+
+      deleteBookmark: (id) => {
+        void run(
+          () => del(`/bookmarks/${id}`),
+          (d) => ({ ...d, bookmarks: d.bookmarks.filter((x) => x.id !== id) }),
+        );
+      },
+
+      toggleBookmarkFav: (id) => {
+        const b = dbRef.current.bookmarks.find((x) => x.id === id);
+        if (!b) return;
+        const next = { ...b, favorite: !b.favorite };
+        void run(
+          () => put(`/bookmarks/${id}`, next),
+          (d) => ({ ...d, bookmarks: d.bookmarks.map((x) => (x.id === id ? next : x)) }),
+        );
+      },
+
+      saveWish: (w, done) => {
+        void run(
+          () => put(`/wishes/${w.id}`, w),
+          (d) => ({
+            ...d,
+            wishes: d.wishes.some((x) => x.id === w.id)
+              ? d.wishes.map((x) => (x.id === w.id ? w : x))
+              : [w, ...d.wishes],
+          }),
+          done,
+        );
+      },
+
+      deleteWish: (id) => {
+        void run(
+          () => del(`/wishes/${id}`),
+          (d) => ({ ...d, wishes: d.wishes.filter((x) => x.id !== id) }),
+        );
+      },
+
+      addTag: (tag) => {
+        if (dbRef.current.tags.some((x) => x.name.toLowerCase() === tag.name.toLowerCase())) return;
+        void run(
+          () => post('/tags', tag),
+          (d) => ({ ...d, tags: [...d.tags, tag] }),
+        );
+      },
+
+      deleteTag: (name) => {
+        void run(
+          () => del(`/tags/${encodeURIComponent(name)}`),
+          (d) => ({
+            ...d,
+            tags: d.tags.filter((x) => x.name !== name),
+            apps: d.apps.map((a) => ({ ...a, tags: a.tags.filter((x) => x !== name) })),
+          }),
+        );
+      },
+
+      updateSettings: (p, done) => {
+        const next = { ...dbRef.current.settings, ...p };
+        void run(
+          () => put('/settings', next),
+          (d) => ({ ...d, settings: next }),
+          done,
+        );
+      },
+
+      signIn: (user) => {
+        setDb((d) => ({ ...d, user }));
+        // Sesi baru: ambil isi akunnya.
+        void loadState().catch(() => toast('Gagal memuat data.', 'error'));
+      },
+
+      signOut: () => {
+        void (async () => {
+          try {
+            await post('/auth/logout');
+          } catch {
+            // Keluar tidak boleh gagal dari sisi pengguna; sesi lokal tetap dibuang.
+          }
+          setDb(EMPTY);
+        })();
+      },
+
+      resetData: (done) => {
+        void run(
+          () => del('/state'),
+          (d) => ({ ...EMPTY, user: d.user, settings: { ...EMPTY.settings, notifyEmail: d.user?.email ?? '' } }),
+          done,
+        );
+      },
     };
-  }, [db, t, lang, toasts, toast, dismissToast, patch]);
+  }, [db, t, lang, toasts, toast, dismissToast, run, loadState]);
+
+  // Jangan render apa pun sebelum sesi diketahui: tanpa ini halaman masuk
+  // berkelip sesaat sebelum dashboard muncul.
+  if (!ready) return null;
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }

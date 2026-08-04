@@ -33,8 +33,7 @@ export default function Settings() {
   const palette = ['#2f6f5e', '#5b7fa6', '#b58a52', '#a6708f', '#6f7fb5', '#8a72b0', '#b06565'];
 
   const save = (p: Parameters<typeof updateSettings>[0]) => {
-    updateSettings(p);
-    toast(t('set.saved'));
+    updateSettings(p, t('set.saved'));
   };
 
   return (
