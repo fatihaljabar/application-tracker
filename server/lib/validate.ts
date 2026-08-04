@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   ACTIVITY_TYPE_VALUES,
   JOB_TYPE_VALUES,
+  PREP_STATUS_VALUES,
   REMINDER_TYPE_VALUES,
   STATUS_VALUES,
   WORK_TYPE_VALUES,
@@ -112,6 +113,45 @@ export const noteInput = z.object({
   strengths: z.string().max(20_000).default(''),
   weaknesses: z.string().max(20_000).default(''),
   toLearn: z.string().max(20_000).default(''),
+});
+
+export const bookmarkInput = z.object({
+  id: uuid,
+  company: z.string().trim().min(1, 'Nama perusahaan wajib diisi').max(255),
+  position: z.string().trim().min(1, 'Posisi wajib diisi').max(255),
+  url: safeUrl.default(''),
+  source: z.string().max(64).default(''),
+  deadline: emptyOr(dateOnly).default(''),
+  note: z.string().max(5000).default(''),
+  favorite: z.boolean().default(false),
+  savedAt: z.string().datetime(),
+});
+
+export const wishInput = z.object({
+  id: uuid,
+  company: z.string().trim().min(1, 'Nama perusahaan wajib diisi').max(255),
+  role: z.string().max(255).default(''),
+  prep: z.enum(PREP_STATUS_VALUES),
+  skills: z.array(z.string().max(64)).max(50).default([]),
+  deadline: emptyOr(dateOnly).default(''),
+  notes: z.string().max(5000).default(''),
+});
+
+export const tagInput = z.object({
+  name: z.string().trim().min(1, 'Nama tag wajib diisi').max(64),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Warna harus berupa kode heksadesimal'),
+});
+
+export const settingsInput = z.object({
+  theme: z.enum(['light', 'dark']),
+  language: z.enum(['id', 'en']),
+  timezone: z.string().min(1).max(64),
+  weeklyTarget: z.number().int().min(1).max(1000),
+  monthlyTarget: z.number().int().min(1).max(10_000),
+  emailNotif: z.boolean(),
+  dailyReminder: z.boolean(),
+  notifyEmail: z.string().email('Format email tidak valid').max(255),
+  cvValidDays: z.number().int().min(1).max(3650),
 });
 
 export const statusChange = z.object({

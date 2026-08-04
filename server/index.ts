@@ -9,9 +9,13 @@ import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
 import { activitiesRouter } from './routes/activities.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
+import { bookmarksRouter } from './routes/bookmarks.ts';
 import { notesRouter } from './routes/notes.ts';
 import { remindersRouter } from './routes/reminders.ts';
+import { settingsRouter } from './routes/settings.ts';
 import { stateRouter } from './routes/state.ts';
+import { tagsRouter } from './routes/tags.ts';
+import { wishesRouter } from './routes/wishes.ts';
 
 const app = express();
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
@@ -32,6 +36,10 @@ app.use('/api/applications', applicationsRouter);
 app.use('/api/activities', activitiesRouter);
 app.use('/api/reminders', remindersRouter);
 app.use('/api/notes', notesRouter);
+app.use('/api/bookmarks', bookmarksRouter);
+app.use('/api/wishes', wishesRouter);
+app.use('/api/tags', tagsRouter);
+app.use('/api/settings', settingsRouter);
 
 // Rute resource menyusul di sini seiring M1.
 
