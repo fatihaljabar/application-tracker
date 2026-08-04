@@ -1,73 +1,78 @@
-# React + TypeScript + Vite
+# Lacak Lamaran
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A job application tracker for Indonesian job seekers. Free, no ads, self-hosted.
 
-Currently, two official plugins are available:
+Applying for jobs is a long process with many branches. An active job seeker can have
+30–80 live applications, each with its own stage, schedule, contacts and CV version.
+A spreadsheet holds some of that, but it does not remind you, does not keep your
+documents, and does not calculate anything.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+> **Status: in development.** The application layer is working — Google sign-in, MySQL
+> storage, and all tracking features. Document upload and email reminders are not built
+> yet. Not deployed publicly.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Pipeline** — 11 stages from wishlist to accepted, drag and drop, keyboard reachable
+- **Applications** — 14 fields per entry, search across 7 filters, tags, archive
+- **Timeline** — every status change and manual note, in order
+- **Statistics** — pass rate per stage, average response time, which job sources actually reply
+- **Reminders and calendar** — interviews, tests, follow-ups, deadlines
+- **Interview notes** — questions, answers, feedback, what to study next
+- **Bookmarks and company wishlist** — save a posting before applying, convert it in one step
+- Indonesian and English, light and dark, built for phones first
 
-## Expanding the ESLint configuration
+## Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Layer | Choice |
+|---|---|
+| Frontend | TypeScript · React 19 · Vite · Tailwind v4 |
+| Backend | Node.js · Express 5 — one process serving `/api/*` and the built frontend |
+| Database | MySQL · Drizzle ORM |
+| Auth | Google Identity Services → signed session cookie |
+| Files | Cloudflare R2 via presigned URLs *(planned)* |
+| Email | Resend *(planned)* |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Six runtime dependencies: `express`, `cookie-parser`, `drizzle-orm`, `mysql2`,
+`aws4fetch`, `zod`. No framework beyond React, no Docker, no queue.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Running locally
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Requires Node 22+ and a MySQL 8 database.
+
+```bash
+npm install
+cp .env.example .env    # then fill in the values
+npm run migrate         # create the tables
+npm run dev             # backend and frontend together, Ctrl+C stops both
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The app runs at `http://localhost:5173`. Sign-in needs a Google OAuth client ID with
+`http://localhost:5173` listed under authorised JavaScript origins.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Command | |
+|---|---|
+| `npm run dev` | Backend and frontend together |
+| `npm run build` | Typecheck and build the frontend |
+| `npm start` | Run the server against `dist/` |
+| `npm run lint` / `format` | Biome |
+| `npm run db:generate` | Write a migration from schema changes |
+| `npm run migrate` | Apply pending migrations |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Layout
+
 ```
+src/      frontend — React pages and components
+server/   backend — never imported by the frontend
+shared/   types used by both sides
+drizzle/  migration SQL, committed and reviewable
+```
+
+Secrets are read only in `server/`. Anything under `src/` ends up in the user's browser.
+
+## Privacy
+
+The contents of this app are a list of the companies someone is applying to, often while
+still employed elsewhere. It is treated as sensitive personal data: no user can see
+another user's data, only name, email and profile picture are requested from Google, and
+there are no third-party trackers or analytics.
