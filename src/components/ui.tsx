@@ -30,14 +30,22 @@ type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'ghost' | 'outline' | 'soft' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   icon?: string;
+  /**
+   * Sejak menyimpan menunggu balasan server, tombol tanpa penanda terlihat
+   * menggantung dan bisa ditekan dua kali. Ikonnya diganti pemutar, tombolnya
+   * dinonaktifkan — ukuran dan warnanya tidak berubah sama sekali.
+   */
+  pending?: boolean;
 };
 
 export function Button({
   variant = 'outline',
   size = 'md',
   icon,
+  pending = false,
   className,
   children,
+  disabled,
   ...rest
 }: BtnProps) {
   const base =
@@ -58,10 +66,56 @@ export function Button({
     icon: 'h-9 w-9 text-[13px]',
   };
   return (
-    <button type="button" className={cx(base, variants[variant], sizes[size], className)} {...rest}>
-      {icon && <Icon name={icon} className="text-[1.05em]" />}
+    <button
+      type="button"
+      disabled={disabled || pending}
+      className={cx(base, variants[variant], sizes[size], className)}
+      aria-busy={pending || undefined}
+      {...rest}
+    >
+      {pending ? (
+        <Icon name="fi-rr-spinner" className="animate-spin text-[1.05em]" />
+      ) : (
+        icon && <Icon name={icon} className="text-[1.05em]" />
+      )}
       {children}
     </button>
+  );
+}
+
+/* -------------------------------------------------------------- skeleton */
+/**
+ * Penanda muat. Bentuknya meniru kartu yang digantikannya: sudut dan warna
+ * memakai token yang sama (`--surface-2`, `--line`), tanpa keyframe baru —
+ * denyutnya memakai animasi bawaan Tailwind.
+ */
+export function Skeleton({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cx(
+        'animate-pulse rounded-2xl border border-[var(--line)] bg-[var(--surface-2)]',
+        className,
+      )}
+    />
+  );
+}
+
+/** Kerangka isi halaman saat data pertama kali diambil. */
+export function PageSkeleton() {
+  return (
+    <div className="anim-fade" aria-busy="true">
+      <Skeleton className="mb-7 h-9 w-64 rounded-xl" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-[132px]" />
+        ))}
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+        <Skeleton className="h-[300px]" />
+        <Skeleton className="h-[300px]" />
+      </div>
+    </div>
   );
 }
 
@@ -434,14 +488,18 @@ export function Confirm({
   cancelLabel,
   onConfirm,
   onClose,
+  danger = true,
 }: {
   open: boolean;
   title: string;
   description?: string;
   confirmLabel: string;
-  cancelLabel: string;
+  /** Tanpa label ini tombol batal tidak dirender — bentuk itu dipakai dialog galat. */
+  cancelLabel?: string;
   onConfirm: () => void;
   onClose: () => void;
+  /** Dialog galat bukan tindakan merusak, jadi tombolnya tidak selalu merah. */
+  danger?: boolean;
 }) {
   return (
     <Modal
@@ -451,12 +509,14 @@ export function Confirm({
       size="sm"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
-            {cancelLabel}
-          </Button>
+          {cancelLabel && (
+            <Button variant="ghost" onClick={onClose}>
+              {cancelLabel}
+            </Button>
+          )}
           <Button
             variant="primary"
-            className="bg-[var(--danger)]"
+            className={danger ? 'bg-[var(--danger)]' : undefined}
             onClick={() => {
               onConfirm();
               onClose();
