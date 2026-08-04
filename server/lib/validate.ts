@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   ACTIVITY_TYPE_VALUES,
   JOB_TYPE_VALUES,
+  REMINDER_TYPE_VALUES,
   STATUS_VALUES,
   WORK_TYPE_VALUES,
 } from '../../shared/types.ts';
@@ -71,6 +72,46 @@ export const activityInput = z.object({
   type: z.enum(ACTIVITY_TYPE_VALUES),
   title: z.string().trim().min(1).max(255),
   description: z.string().max(2000).default(''),
+});
+
+/**
+ * Aktivitas "dibuat" ikut dalam permintaan yang sama supaya lamaran dan entri
+ * Timeline-nya lahir dalam satu transaksi. Dua panggilan terpisah bisa berhenti
+ * di tengah dan meninggalkan lamaran tanpa jejak di Timeline.
+ */
+export const applicationCreate = applicationInput.extend({
+  activity: activityInput.optional(),
+});
+
+/** Aktivitas yang ditambahkan pengguna sendiri lewat halaman Timeline. */
+export const activityCreate = activityInput.extend({
+  appId: uuid.nullable().default(null),
+  date: z.string().datetime(),
+});
+
+export const reminderInput = z.object({
+  id: uuid,
+  appId: uuid.nullable().default(null),
+  type: z.enum(REMINDER_TYPE_VALUES),
+  title: z.string().trim().min(1, 'Judul wajib diisi').max(255),
+  datetime: z.string().datetime(),
+  notes: z.string().max(5000).default(''),
+  done: z.boolean().default(false),
+});
+
+export const noteInput = z.object({
+  id: uuid,
+  appId: uuid,
+  stage: z.string().trim().min(1, 'Tahap wajib diisi').max(64),
+  date: emptyOr(dateOnly).default(''),
+  qa: z
+    .array(z.object({ id: uuid, q: z.string().max(5000), a: z.string().max(20_000) }))
+    .max(100)
+    .default([]),
+  feedback: z.string().max(20_000).default(''),
+  strengths: z.string().max(20_000).default(''),
+  weaknesses: z.string().max(20_000).default(''),
+  toLearn: z.string().max(20_000).default(''),
 });
 
 export const statusChange = z.object({

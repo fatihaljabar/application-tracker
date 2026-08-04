@@ -6,8 +6,11 @@ import express from 'express';
 import { assertDatabaseReachable } from './db/client.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
+import { activitiesRouter } from './routes/activities.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
+import { notesRouter } from './routes/notes.ts';
+import { remindersRouter } from './routes/reminders.ts';
 import { stateRouter } from './routes/state.ts';
 
 const app = express();
@@ -26,6 +29,9 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/state', stateRouter);
 app.use('/api/applications', applicationsRouter);
+app.use('/api/activities', activitiesRouter);
+app.use('/api/reminders', remindersRouter);
+app.use('/api/notes', notesRouter);
 
 // Rute resource menyusul di sini seiring M1.
 

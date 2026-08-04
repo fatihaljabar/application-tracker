@@ -11,7 +11,13 @@ import {
 } from '../db/schema.ts';
 import { ApiError } from '../lib/middleware.ts';
 import { requireAuth } from '../lib/session.ts';
-import { applicationInput, applicationUpdate, parse, statusChange, uuid } from '../lib/validate.ts';
+import {
+  applicationCreate,
+  applicationUpdate,
+  parse,
+  statusChange,
+  uuid,
+} from '../lib/validate.ts';
 
 export const applicationsRouter = Router();
 applicationsRouter.use(requireAuth);
@@ -47,7 +53,7 @@ const emptyToNull = (v: string) => (v === '' ? null : v);
 
 applicationsRouter.post('/', async (req, res) => {
   const userId = req.userId as string;
-  const input = parse(applicationInput, req.body);
+  const input = parse(applicationCreate, req.body);
   await assertDocumentsOwned(userId, input.documentIds);
 
   const now = new Date();
@@ -90,6 +96,17 @@ applicationsRouter.post('/', async (req, res) => {
       await tx
         .insert(applicationDocuments)
         .values(input.documentIds.map((d) => ({ applicationId: input.id, documentId: d })));
+    }
+    if (input.activity) {
+      await tx.insert(activities).values({
+        id: input.activity.id,
+        userId,
+        applicationId: input.id,
+        type: input.activity.type,
+        title: input.activity.title,
+        description: input.activity.description,
+        date: now,
+      });
     }
   });
 
