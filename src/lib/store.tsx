@@ -109,21 +109,21 @@ interface Ctx {
   addActivity: (a: Omit<Activity, 'id'>) => void;
   deleteActivity: (id: string) => void;
   // reminders
-  saveReminder: (r: Reminder, done?: string) => void;
+  saveReminder: (r: Reminder, done?: string) => Promise<boolean>;
   deleteReminder: (id: string) => void;
   toggleReminder: (id: string) => void;
   // docs
   addDoc: (d: Omit<DocFile, 'id'>) => void;
   deleteDoc: (id: string) => void;
   // notes
-  saveNote: (n: InterviewNote, done?: string) => void;
+  saveNote: (n: InterviewNote, done?: string) => Promise<boolean>;
   deleteNote: (id: string) => void;
   // bookmarks
-  saveBookmark: (b: Bookmark, done?: string) => void;
+  saveBookmark: (b: Bookmark, done?: string) => Promise<boolean>;
   deleteBookmark: (id: string) => void;
   toggleBookmarkFav: (id: string) => void;
   // wishes
-  saveWish: (w: CompanyWish, done?: string) => void;
+  saveWish: (w: CompanyWish, done?: string) => Promise<boolean>;
   deleteWish: (id: string) => void;
   // tags
   addTag: (t: Tag) => void;
@@ -534,7 +534,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       saveReminder: (r, done) => {
-        void run(
+        return run(
           () => put(`/reminders/${r.id}`, r),
           (d) => ({
             ...d,
@@ -573,7 +573,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       saveNote: (n, done) => {
-        void run(
+        return run(
           () => put(`/notes/${n.id}`, n),
           (d) => ({
             ...d,
@@ -593,7 +593,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       saveBookmark: (b, done) => {
-        void run(
+        return run(
           () => put(`/bookmarks/${b.id}`, b),
           (d) => ({
             ...d,
@@ -623,7 +623,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       saveWish: (w, done) => {
-        void run(
+        return run(
           () => put(`/wishes/${w.id}`, w),
           (d) => ({
             ...d,

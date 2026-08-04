@@ -20,7 +20,7 @@ const blank = (appId = ''): InterviewNote => ({
 const STAGES = ['Screening', 'HR Interview', 'User Interview', 'Technical Interview', 'Final Interview'];
 
 export default function Interviews() {
-  const { t, db, lang, saveNote, deleteNote } = useStore();
+  const { t, db, lang, saveNote, deleteNote, saving } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -44,18 +44,18 @@ export default function Interviews() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [db.notes, db.apps, q]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.appId) e.appId = `${t('f.application')} ${t('c.required')}`;
     if (!form.stage.trim()) e.stage = `${t('i.stage')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length) return;
-    saveNote({
+    const ok = await saveNote({
       ...form,
       id: form.id || uid(),
       qa: form.qa.filter((x) => x.q.trim() || x.a.trim()),
-    }, t('i.saved'))
-    
+    }, t('i.saved'));
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -202,7 +202,7 @@ export default function Interviews() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>

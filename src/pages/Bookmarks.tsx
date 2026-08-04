@@ -19,7 +19,7 @@ const blank = (): Bookmark => ({
 });
 
 export default function Bookmarks() {
-  const { t, db, lang, saveBookmark, deleteBookmark, toggleBookmarkFav, addApp, toast } = useStore();
+  const { t, db, lang, saveBookmark, deleteBookmark, toggleBookmarkFav, addApp, toast, saving } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState('all');
@@ -36,15 +36,15 @@ export default function Bookmarks() {
       .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.savedAt.localeCompare(a.savedAt));
   }, [db.bookmarks, q, filter]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.company.trim()) e.company = `${t('f.company')} ${t('c.required')}`;
     if (!form.position.trim()) e.position = `${t('f.position')} ${t('c.required')}`;
     if (form.url && !/^https?:\/\//i.test(form.url)) e.url = 'URL harus diawali http:// atau https://';
     setErr(e);
     if (Object.keys(e).length) return;
-    saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() }, `${t('c.save')} ✓`)
-    
+    const ok = await saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() }, `${t('c.save')} ✓`);
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -205,7 +205,7 @@ export default function Bookmarks() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>
