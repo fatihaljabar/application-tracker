@@ -96,8 +96,8 @@ export const applications = mysqlTable(
     salaryMax: int('salary_max'),
     source: varchar('source', { length: 64 }).notNull().default(''),
     url: varchar('url', { length: 1024 }).notNull().default(''),
-    appliedDate: date('applied_date'),
-    deadline: date('deadline'),
+    appliedDate: date('applied_date', { mode: 'string' }),
+    deadline: date('deadline', { mode: 'string' }),
     recruiterName: varchar('recruiter_name', { length: 255 }).notNull().default(''),
     recruiterEmail: varchar('recruiter_email', { length: 255 }).notNull().default(''),
     recruiterPhone: varchar('recruiter_phone', { length: 32 }).notNull().default(''),
@@ -239,7 +239,7 @@ export const interviewNotes = mysqlTable(
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
     stage: varchar('stage', { length: 64 }).notNull(),
-    date: date('date'),
+    date: date('date', { mode: 'string' }),
     // [{ id, q, a }] — id-nya stabil supaya React tidak salah memasangkan baris
     // saat satu pasangan dihapus.
     qa: json('qa').$type<{ id: string; q: string; a: string }[]>().notNull(),
@@ -261,7 +261,7 @@ export const bookmarks = mysqlTable(
     position: varchar('position', { length: 255 }).notNull(),
     url: varchar('url', { length: 1024 }).notNull().default(''),
     source: varchar('source', { length: 64 }).notNull().default(''),
-    deadline: date('deadline'),
+    deadline: date('deadline', { mode: 'string' }),
     note: text('note').notNull(),
     favorite: boolean('favorite').notNull().default(false),
     savedAt: datetime('saved_at').notNull(),
@@ -279,7 +279,7 @@ export const wishes = mysqlTable(
     role: varchar('role', { length: 255 }).notNull().default(''),
     prep: mysqlEnum('prep', PREP_STATUS_VALUES).notNull().default('not_started'),
     skills: json('skills').$type<string[]>().notNull(),
-    deadline: date('deadline'),
+    deadline: date('deadline', { mode: 'string' }),
     notes: text('notes').notNull(),
   },
   (t) => [index('idx_user').on(t.userId)],

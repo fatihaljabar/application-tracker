@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "migrate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs push"
+    "migrate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs migrate",
+    "db:generate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs generate"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",

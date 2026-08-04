@@ -7,6 +7,7 @@ import { assertDatabaseReachable } from './db/client.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
 import { authRouter } from './routes/auth.ts';
+import { stateRouter } from './routes/state.ts';
 
 const app = express();
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
@@ -22,6 +23,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/state', stateRouter);
 
 // Rute resource menyusul di sini seiring M1.
 
