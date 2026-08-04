@@ -17,7 +17,7 @@ const blank = (): Reminder => ({
 });
 
 export default function Reminders() {
-  const { t, db, lang, saveReminder, deleteReminder, toggleReminder } = useStore();
+  const { t, db, lang, saveReminder, deleteReminder, toggleReminder, saving } = useStore();
   const tz = db.settings.timezone;
   const [filter, setFilter] = useState('open');
   const [open, setOpen] = useState(false);
@@ -34,19 +34,19 @@ export default function Reminders() {
     return out.sort((a, b) => +new Date(a.datetime) - +new Date(b.datetime));
   }, [db.reminders, filter]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = `${t('f.title')} ${t('c.required')}`;
     if (!form.datetime) e.datetime = `${t('f.date')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length) return;
-    saveReminder({
+    const ok = await saveReminder({
       ...form,
       id: form.id || uid(),
       title: form.title.trim(),
       datetime: new Date(form.datetime).toISOString(),
-    }, t('r.saved'))
-    
+    }, t('r.saved'));
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -178,7 +178,7 @@ export default function Reminders() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>

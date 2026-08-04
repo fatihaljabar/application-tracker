@@ -30,7 +30,7 @@ const blank = (): CompanyWish => ({
 });
 
 export default function Wishlist() {
-  const { t, db, lang, saveWish, deleteWish } = useStore();
+  const { t, db, lang, saveWish, deleteWish, saving } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -46,13 +46,13 @@ export default function Wishlist() {
     );
   }, [db.wishes, q]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.company.trim()) e.company = `${t('f.company')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length) return;
-    saveWish({ ...form, id: form.id || uid(), company: form.company.trim() }, `${t('c.save')} ✓`)
-    
+    const ok = await saveWish({ ...form, id: form.id || uid(), company: form.company.trim() }, `${t('c.save')} ✓`);
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -186,7 +186,7 @@ export default function Wishlist() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>
