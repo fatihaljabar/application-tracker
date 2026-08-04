@@ -4,7 +4,7 @@ import type { Application } from '@shared/types';
 import { Badge, Button, Icon, Modal, Select } from './ui';
 import { CompanyAvatar, StatusPill, TagChip } from './shared';
 import { STATUS_KEYS, ACTIVITY_ICON, statusMeta } from '../lib/constants';
-import { fmtDate, fmtDateTime, salaryLabel, daysUntil, fileSize } from '../lib/utils';
+import { fmtDate, fmtDateTime, salaryLabel, daysUntil, fileSize, safeUrl } from '../lib/utils';
 
 export default function AppDetail({
   app,
@@ -25,6 +25,7 @@ export default function AppDetail({
   const docs = db.docs.filter((d) => app.documentIds.includes(d.id));
   const notes = db.notes.filter((n) => n.appId === app.id);
   const dl = daysUntil(app.deadline);
+  const url = safeUrl(app.url);
 
   const rows: { icon: string; label: string; value: React.ReactNode }[] = [
     { icon: 'fi-rr-briefcase', label: t('f.department'), value: app.department || '—' },
@@ -118,10 +119,10 @@ export default function AppDetail({
               ))}
             </div>
 
-            {(app.recruiterEmail || app.recruiterPhone || app.url) && (
+            {(app.recruiterEmail || app.recruiterPhone || url) && (
               <div className="flex flex-wrap gap-2">
-                {app.url && (
-                  <a href={app.url} target="_blank" rel="noreferrer">
+                {url && (
+                  <a href={url} target="_blank" rel="noreferrer">
                     <Button size="sm" icon="fi-rr-link-alt">{t('f.url')}</Button>
                   </a>
                 )}

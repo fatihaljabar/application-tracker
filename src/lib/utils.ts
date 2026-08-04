@@ -9,6 +9,26 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 
 export const todayISO = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * Mengembalikan url hanya kalau skemanya http atau https, selain itu string
+ * kosong. Aturannya sama persis dengan `safeUrl` di server/lib/validate.ts —
+ * kalau salah satunya diubah, ubah keduanya.
+ *
+ * Server sudah menolak `javascript:` sejak disimpan, jadi ini menjaga data yang
+ * sudah telanjur ada: baris lama, hasil impor, dan apa pun yang masuk sebelum
+ * aturan itu berlaku. Pemeriksaan saat menyimpan tidak menolong baris yang
+ * sudah di database sejak sebelumnya.
+ *
+ * Daftar izin, bukan daftar larangan: apa pun yang tidak diawali http(s):// —
+ * termasuk spasi sisipan dan skema yang diaburkan — ikut ditolak tanpa perlu
+ * ditebak satu per satu. Dipangkas dulu karena peramban juga mengabaikan spasi
+ * di tepi saat membaca skema.
+ */
+export function safeUrl(value: string) {
+  const url = value.trim();
+  return /^https?:\/\//i.test(url) ? url : '';
+}
+
 export function fmtDate(value: string, lang: 'id' | 'en', tz?: string) {
   if (!value) return '—';
   const d = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
