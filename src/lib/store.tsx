@@ -24,7 +24,7 @@ import type {
 } from '@shared/types';
 import { ApiError, api, del, patch, post, put } from './api';
 import { translate } from './i18n';
-import { uid } from './utils';
+import { initials, uid } from './utils';
 
 /**
  * Sumber data pindah dari localStorage ke server. Bentuk DB di memori sengaja
@@ -69,16 +69,37 @@ export interface Toast {
   tone: 'success' | 'error' | 'info';
 }
 
+/** Dialog galat yang menghentikan pengguna — bukan toast yang lewat begitu saja. */
+export interface Alert {
+  title: string;
+  description?: string;
+  actionLabel: string;
+  onAction: () => void;
+}
+
 interface Ctx {
   db: DB;
+  /** Data pertama sedang diambil. Halaman menampilkan kerangka, bukan layar kosong. */
+  loading: boolean;
+  /**
+   * Ada mutasi yang sedang menunggu balasan server. Tombol simpan memakainya
+   * supaya tidak terlihat menggantung dan tidak bisa ditekan dua kali.
+   */
+  saving: boolean;
+  alert: Alert | null;
+  dismissAlert: () => void;
   t: (key: string) => string;
   lang: 'id' | 'en';
   toasts: Toast[];
   toast: (message: string, tone?: Toast['tone']) => void;
   dismissToast: (id: string) => void;
   // apps
-  saveApp: (app: Application, done?: string) => void;
-  addApp: (app: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'history'>, done?: string) => void;
+  /** Mengembalikan true bila server menerima. Form menunggu ini sebelum menutup. */
+  saveApp: (app: Application, done?: string) => Promise<boolean>;
+  addApp: (
+    app: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'history'>,
+    done?: string,
+  ) => Promise<boolean>;
   deleteApp: (id: string) => void;
   duplicateApp: (id: string) => void;
   toggleArchive: (id: string) => void;
@@ -119,6 +140,9 @@ const StoreCtx = createContext<Ctx | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<DB>(EMPTY);
   const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState<Alert | null>(null);
+  const [inFlight, setInFlight] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Record<string, number>>({});
   const dbRef = useRef(db);
@@ -152,26 +176,60 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDb(state);
   }, []);
 
+  const dismissAlert = useCallback(() => setAlert(null), []);
+
   // Muat sekali saat aplikasi dibuka. Sesi yang tidak sah menghasilkan 401,
   // dan itu berarti tampilkan halaman masuk — bukan galat.
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const me = await api<{ user: { name: string } | null }>('/auth/me');
-        if (alive && me.user) await loadState();
+        const me = await api<{
+          user: { name: string; email: string; since: string } | null;
+        }>('/auth/me');
+        if (!alive) return;
+        const who = me.user;
+        if (!who) return;
+        // Pengguna sudah diketahui sebelum datanya sampai, supaya Shell bisa
+        // menampilkan kerangka di dalam layout — bukan layar kosong, dan bukan
+        // pula halaman masuk yang berkelip.
+        setDb((d) => ({
+          ...d,
+          user: {
+            name: who.name,
+            email: who.email,
+            provider: 'google',
+            avatar: initials(who.name),
+            since: who.since,
+          },
+        }));
+        setReady(true);
+        await loadState();
       } catch (e) {
-        if (alive && !(e instanceof ApiError && e.isUnauthenticated)) {
-          toast(e instanceof Error ? e.message : 'Gagal memuat data.', 'error');
+        if (!alive) return;
+        // 401 berarti memang belum masuk — tampilkan halaman masuk, bukan galat.
+        // Selain itu server tidak terjangkau, dan menampilkan halaman masuk di
+        // situ menyesatkan: pengguna sebenarnya masih login.
+        if (!(e instanceof ApiError && e.isUnauthenticated)) {
+          setAlert({
+            title: 'Tidak bisa menghubungi server',
+            description:
+              'Data kamu aman di server, tapi aplikasi tidak bisa mengambilnya sekarang. Periksa koneksi, lalu muat ulang halaman.',
+            actionLabel: 'Muat ulang',
+            onAction: () => window.location.reload(),
+          });
         }
       } finally {
-        if (alive) setReady(true);
+        if (alive) {
+          setReady(true);
+          setLoading(false);
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, [loadState, toast]);
+  }, [loadState]);
 
   /**
    * Menjalankan satu mutasi: panggil API, dan hanya kalau berhasil perbarui
@@ -179,24 +237,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
    */
   const run = useCallback(
     async <R,>(call: () => Promise<R>, apply: (d: DB, result: R) => DB, successMessage?: string) => {
+      setInFlight((n) => n + 1);
       try {
         const result = await call();
         setDb((d) => apply(d, result));
         if (successMessage) toast(successMessage);
+        return true;
       } catch (e) {
+        // Sesi habis dan konflik antar tab menghentikan pekerjaan pengguna,
+        // jadi keduanya memakai dialog. Galat sementara cukup toast
+        // (TECHNICAL.md § 6).
         if (e instanceof ApiError && e.isUnauthenticated) {
           setDb((d) => ({ ...d, user: null }));
-          toast('Sesi berakhir. Silakan masuk lagi.', 'error');
-          return;
+          setAlert({
+            title: 'Sesi berakhir',
+            description: 'Silakan masuk lagi untuk melanjutkan.',
+            actionLabel: 'Masuk',
+            onAction: () => setAlert(null),
+          });
+          return false;
         }
         if (e instanceof ApiError && e.isConflict) {
-          // Tab lain sudah mengubah data ini. Tarik ulang supaya tampilan
-          // menunjukkan keadaan sebenarnya, bukan versi yang sudah basi.
-          toast(e.message, 'error');
+          setAlert({
+            title: 'Data berubah di tempat lain',
+            description: `${e.message} Tampilan akan disegarkan supaya kamu melihat versi terbarunya.`,
+            actionLabel: 'Mengerti',
+            onAction: () => setAlert(null),
+          });
           await loadState().catch(() => {});
-          return;
+          return false;
         }
         toast(e instanceof Error ? e.message : 'Gagal menyimpan.', 'error');
+        return false;
+      } finally {
+        setInFlight((n) => n - 1);
       }
     },
     [toast, loadState],
@@ -233,6 +307,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     return {
       db,
+      loading,
+      saving: inFlight > 0,
+      alert,
+      dismissAlert,
       t,
       lang,
       toasts,
@@ -256,7 +334,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           description: `${app.position}${app.location ? ` · ${app.location}` : ''}`,
           date: now,
         };
-        void run(
+        return run(
           () =>
             post<{ createdAt: string; updatedAt: string }>('/applications', {
               ...appPayload(app),
@@ -280,7 +358,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       saveApp: (app, done) => {
-        void run(
+        return run(
           () =>
             put<{ updatedAt: string }>(`/applications/${app.id}`, {
               ...appPayload(app),
@@ -617,7 +695,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
       },
     };
-  }, [db, t, lang, toasts, toast, dismissToast, run, loadState]);
+  }, [db, loading, inFlight, alert, dismissAlert, t, lang, toasts, toast, dismissToast, run, loadState]);
 
   // Jangan render apa pun sebelum sesi diketahui: tanpa ini halaman masuk
   // berkelip sesaat sebelum dashboard muncul.
