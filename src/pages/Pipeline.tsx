@@ -9,7 +9,7 @@ import type { Application, Status } from '@shared/types';
 import { cx, daysUntil, fmtDate } from '../lib/utils';
 
 export default function Pipeline() {
-  const { t, db, lang, moveApp, toast } = useStore();
+  const { t, db, lang, moveApp } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
@@ -32,8 +32,7 @@ export default function Pipeline() {
     if (dragId) {
       const app = db.apps.find((a) => a.id === dragId);
       if (app && app.status !== status) {
-        moveApp(dragId, status);
-        toast(`${app.company} → ${t(`status.${status}`)}`);
+        moveApp(dragId, status, `${app.company} → ${t(`status.${status}`)}`);
       }
     }
     setDragId(null);

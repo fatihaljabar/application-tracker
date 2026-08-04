@@ -41,7 +41,7 @@ export default function ApplicationForm({
   editing?: Application | null;
   presetStatus?: Status;
 }) {
-  const { t, db, addApp, saveApp, toast } = useStore();
+  const { t, db, addApp, saveApp } = useStore();
   const [form, setForm] = useState(blank());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tab, setTab] = useState<'main' | 'contact' | 'docs'>('main');
@@ -81,12 +81,13 @@ export default function ApplicationForm({
 
   const submit = () => {
     if (!validate()) return;
+    // Pesan sukses dititipkan ke store: hanya store yang tahu penyimpanan
+    // benar-benar berhasil. Mengumumkannya di sini berarti berbohong saat gagal.
     if (editing) {
-      saveApp({ ...editing, ...form });
+      saveApp({ ...editing, ...form }, t('a.saved'));
     } else {
-      addApp(form);
+      addApp(form, t('a.saved'));
     }
-    toast(t('a.saved'));
     onClose();
   };
 

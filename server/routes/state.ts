@@ -276,3 +276,46 @@ function initials(name: string) {
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('');
 }
+
+/**
+ * Tombol "Reset data" di Pengaturan. Menghapus seluruh isi akun tapi
+ * mempertahankan akunnya, lalu mengembalikan pengaturan ke nilai bawaan —
+ * sesuai arti tombol itu di demo.
+ *
+ * Ini bukan hapus akun. Hapus akun beserta berkas di R2 adalah PRD § 6.19,
+ * dikerjakan di M3.
+ */
+stateRouter.delete('/', requireAuth, async (req, res) => {
+  const userId = req.userId as string;
+
+  await db.transaction(async (tx) => {
+    // Aktivitas, reminder, riwayat status, dan catatan ikut terhapus lewat
+    // cascade saat lamarannya hilang; sisanya dihapus langsung.
+    await tx.delete(applications).where(eq(applications.userId, userId));
+    await tx.delete(activities).where(eq(activities.userId, userId));
+    await tx.delete(reminders).where(eq(reminders.userId, userId));
+    await tx.delete(interviewNotes).where(eq(interviewNotes.userId, userId));
+    await tx.delete(documents).where(eq(documents.userId, userId));
+    await tx.delete(bookmarks).where(eq(bookmarks.userId, userId));
+    await tx.delete(wishes).where(eq(wishes.userId, userId));
+    await tx.delete(tags).where(eq(tags.userId, userId));
+
+    const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
+    await tx
+      .update(settings)
+      .set({
+        theme: 'light',
+        language: 'id',
+        timezone: 'Asia/Jakarta',
+        weeklyTarget: 5,
+        monthlyTarget: 20,
+        emailNotif: true,
+        dailyReminder: true,
+        notifyEmail: user?.email ?? '',
+        cvValidDays: 90,
+      })
+      .where(eq(settings.userId, userId));
+  });
+
+  res.json({ ok: true });
+});
