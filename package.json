@@ -13,6 +13,7 @@
     "build": "tsc -b && vite build",
     "start": "node --env-file=.env --experimental-strip-types server/index.ts",
     "preview": "vite preview",
+    "test": "node --env-file=.env --experimental-strip-types --test server/isolation.test.ts",
     "lint": "biome check .",
     "format": "biome check --write .",
     "migrate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs migrate",
