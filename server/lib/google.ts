@@ -47,6 +47,19 @@ export async function verifyGoogleIdToken(credential: string): Promise<GooglePro
     info = (await res.json()) as TokenInfo;
   } catch (e) {
     if (e instanceof ApiError) throw e;
+    // Pesan 503 di bawah sama persis untuk DNS gagal, TLS gagal, timeout, dan
+    // balasan yang bukan JSON — dan errorHandler hanya mencatat galat yang bukan
+    // ApiError, jadi tanpa baris ini kegagalan masuk tidak meninggalkan jejak
+    // apa pun. Pernah terjadi sekali di lokal dan penyebabnya tidak bisa
+    // dipastikan sesudahnya. `cause.code` yang membedakan ENOTFOUND (DNS) dari
+    // TimeoutError (batas 8 detik terlewat) — dua hal dengan penanganan berbeda.
+    // Tokennya sendiri tidak pernah ikut dicatat: isinya identitas pengguna.
+    const sebab = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    const kode =
+      e instanceof Error && e.cause instanceof Object && 'code' in e.cause
+        ? ` (${String((e.cause as { code: unknown }).code)})`
+        : '';
+    console.error(`[google] gagal memverifikasi token: ${sebab}${kode}`);
     throw new ApiError(503, 'google_unreachable', 'Tidak bisa menghubungi Google. Coba lagi.');
   }
 
