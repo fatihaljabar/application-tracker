@@ -4,19 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.6"
   },
   "scripts": {
     "dev": "trap 'kill 0' EXIT; npm run dev:server & npm run dev:web",
     "dev:web": "vite",
     "dev:server": "node --env-file=.env --watch --experimental-strip-types server/index.ts",
     "build": "tsc -b && vite build",
-    "start": "node --env-file=.env --experimental-strip-types server/index.ts",
+    "start": "node --env-file-if-exists=.env --experimental-strip-types server/index.ts",
     "preview": "vite preview",
     "test": "node --env-file=.env --experimental-strip-types --test",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "migrate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs migrate",
+    "migrate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs migrate",
     "db:generate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs generate"
   },
   "dependencies": {
