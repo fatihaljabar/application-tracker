@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router';
 import { StoreProvider, useStore } from './lib/store';
 import Layout from './components/Layout';
 import { PageSkeleton } from './components/ui';
