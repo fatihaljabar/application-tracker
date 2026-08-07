@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { StoreProvider, useStore } from './lib/store';
 import Layout from './components/Layout';
 import { PageSkeleton } from './components/ui';
@@ -55,9 +55,9 @@ function Shell() {
 export default function App() {
   return (
     <StoreProvider>
-      <HashRouter>
+      <BrowserRouter>
         <Shell />
-      </HashRouter>
+      </BrowserRouter>
       <Toaster />
       <AlertDialog />
     </StoreProvider>
