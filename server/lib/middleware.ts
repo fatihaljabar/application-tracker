@@ -36,7 +36,17 @@ export function securityHeaders(_req: Request, res: Response, next: NextFunction
     [
       "default-src 'self'",
       "script-src 'self' https://accounts.google.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn-uicons.flaticon.com",
+      // accounts.google.com ada di sini karena pustaka masuk Google memuat
+      // stylesheet-nya sendiri dari sana. Tanpa itu peramban memblokirnya, dan
+      // tombol Google dirender tanpa gaya miliknya. Hari ini akibatnya tidak
+      // terlihat karena tombol itu disembunyikan lalu ditumpuk tombol kita —
+      // tapi pustakanya dimuat langsung dari Google tanpa versi terkunci, jadi
+      // rancangan tombolnya bisa berubah kapan saja. Kalau versi berikutnya
+      // butuh stylesheet ini untuk mengatur ukuran, tombol tak terlihat itu
+      // bergeser dan login berhenti bekerja tanpa galat apa pun.
+      // Domain ini toh sudah dipercaya untuk script-src dan frame-src; melarang
+      // stylesheet-nya sementara mengizinkan skripnya tidak konsisten.
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn-uicons.flaticon.com https://accounts.google.com",
       "font-src 'self' https://fonts.gstatic.com https://cdn-uicons.flaticon.com",
       "img-src 'self' data: https://lh3.googleusercontent.com",
       `connect-src 'self' https://accounts.google.com${R2_HOST ? ` ${R2_HOST}` : ''}`,
