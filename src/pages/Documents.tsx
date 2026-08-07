@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select } from '../components/ui';
 import { DOC_CATEGORIES } from '../lib/constants';
-import type { DocCategory, DocFile } from '../lib/types';
+import type { DocCategory, DocFile } from '@shared/types';
 import { cx, fileSize, fmtDate } from '../lib/utils';
 
 const CAT_ICON: Record<DocCategory, string> = {
@@ -39,10 +39,12 @@ export default function Documents() {
   const groups = useMemo(() => {
     const term = q.trim().toLowerCase();
     const filtered = db.docs
-      .filter((d) => !term || (d.label + ' ' + d.group + ' ' + d.name).toLowerCase().includes(term))
+      .filter((d) => !term || (`${d.label} ${d.group} ${d.name}`).toLowerCase().includes(term))
       .filter((d) => !cat || d.category === cat);
     const map = new Map<string, DocFile[]>();
-    filtered.forEach((d) => map.set(d.group, [...(map.get(d.group) ?? []), d]));
+    filtered.forEach((d) => {
+      map.set(d.group, [...(map.get(d.group) ?? []), d]);
+    });
     return Array.from(map.entries()).map(([g, items]) => [
       g,
       [...items].sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt)),
@@ -114,7 +116,7 @@ export default function Documents() {
           placeholder={t('doc.category')}
           options={[
             { value: '', label: t('c.all') },
-            ...DOC_CATEGORIES.map((c) => ({ value: c, label: t('doc.cat.' + c) })),
+            ...DOC_CATEGORIES.map((c) => ({ value: c, label: t(`doc.cat.${c}`) })),
           ]}
         />
       </div>
@@ -159,7 +161,7 @@ export default function Documents() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13px] font-medium text-[var(--ink)]">{d.label}</p>
                         <p className="truncate text-[11.5px] text-[var(--ink-muted)]">
-                          {t('doc.cat.' + d.category)} · {d.version}
+                          {t(`doc.cat.${d.category}`)} · {d.version}
                           {d.language !== '-' && ` · ${d.language.toUpperCase()}`} · {fileSize(d.size)}
                         </p>
                         <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
@@ -179,7 +181,7 @@ export default function Documents() {
                             <Icon name="fi-rr-download" className="text-[11px]" />
                           </span>
                         )}
-                        <button
+                        <button type="button"
                           onClick={() => setConfirmId(d.id)}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                         >
@@ -212,6 +214,8 @@ export default function Documents() {
         }
       >
         <div className="space-y-4">
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: seret-lepas hanya pelengkap; <input type="file"> di bawah tetap jalur utama yang bisa dijangkau papan ketik. */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: sama — tidak ada aksi yang hanya bisa dicapai lewat seret. */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -269,7 +273,7 @@ export default function Documents() {
               <Select
                 value={meta.category}
                 onChange={(v) => setMeta((m) => ({ ...m, category: v as DocCategory }))}
-                options={DOC_CATEGORIES.map((c) => ({ value: c, label: t('doc.cat.' + c) }))}
+                options={DOC_CATEGORIES.map((c) => ({ value: c, label: t(`doc.cat.${c}`) }))}
               />
             </Field>
             <Field label={t('doc.language')}>

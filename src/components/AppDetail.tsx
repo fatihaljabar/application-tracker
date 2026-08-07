@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
-import type { Application } from '../lib/types';
+import type { Application } from '@shared/types';
 import { Badge, Button, Icon, Modal, Select } from './ui';
 import { CompanyAvatar, StatusPill, TagChip } from './shared';
 import { STATUS_KEYS, ACTIVITY_ICON, statusMeta } from '../lib/constants';
-import { fmtDate, fmtDateTime, salaryLabel, daysUntil, fileSize } from '../lib/utils';
+import { fmtDate, fmtDateTime, salaryLabel, daysUntil, fileSize, safeUrl } from '../lib/utils';
 
 export default function AppDetail({
   app,
@@ -25,6 +25,7 @@ export default function AppDetail({
   const docs = db.docs.filter((d) => app.documentIds.includes(d.id));
   const notes = db.notes.filter((n) => n.appId === app.id);
   const dl = daysUntil(app.deadline);
+  const url = safeUrl(app.url);
 
   const rows: { icon: string; label: string; value: React.ReactNode }[] = [
     { icon: 'fi-rr-briefcase', label: t('f.department'), value: app.department || '—' },
@@ -75,7 +76,7 @@ export default function AppDetail({
               }}
               options={STATUS_KEYS.map((s) => ({
                 value: s,
-                label: t('status.' + s),
+                label: t(`status.${s}`),
                 color: statusMeta(s).color,
               }))}
             />
@@ -87,7 +88,7 @@ export default function AppDetail({
 
         <div className="mt-4 flex gap-1 rounded-full bg-[var(--surface-2)] p-1 text-[12.5px]">
           {(['info', 'timeline', 'docs'] as const).map((k) => (
-            <button
+            <button type="button"
               key={k}
               onClick={() => setTab(k)}
               className={
@@ -118,10 +119,10 @@ export default function AppDetail({
               ))}
             </div>
 
-            {(app.recruiterEmail || app.recruiterPhone || app.url) && (
+            {(app.recruiterEmail || app.recruiterPhone || url) && (
               <div className="flex flex-wrap gap-2">
-                {app.url && (
-                  <a href={app.url} target="_blank" rel="noreferrer">
+                {url && (
+                  <a href={url} target="_blank" rel="noreferrer">
                     <Button size="sm" icon="fi-rr-link-alt">{t('f.url')}</Button>
                   </a>
                 )}
@@ -229,7 +230,7 @@ export default function AppDetail({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-[var(--ink)]">{d.label}</p>
                     <p className="truncate text-[11.5px] text-[var(--ink-muted)]">
-                      {t('doc.cat.' + d.category)} · {d.version} · {fileSize(d.size)}
+                      {t(`doc.cat.${d.category}`)} · {d.version} · {fileSize(d.size)}
                     </p>
                   </div>
                   {d.dataUrl && (

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Button, Field, Input, Modal, Select, Textarea, Icon } from './ui';
 import { TagPicker } from './shared';
 import { useStore } from '../lib/store';
-import { JOB_TYPES, SOURCES, STATUS_KEYS, STATUSES, WORK_TYPES } from '../lib/constants';
-import type { Application, JobType, Status, WorkType } from '../lib/types';
+import { JOB_TYPES, SOURCES, STATUS_KEYS, statusMeta, WORK_TYPES } from '../lib/constants';
+import type { Application, JobType, Status, WorkType } from '@shared/types';
 import { cx, fileSize, todayISO } from '../lib/utils';
 
 const blank = (): Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'history'> => ({
@@ -41,7 +41,7 @@ export default function ApplicationForm({
   editing?: Application | null;
   presetStatus?: Status;
 }) {
-  const { t, db, addApp, saveApp, toast } = useStore();
+  const { t, db, addApp, saveApp, saving } = useStore();
   const [form, setForm] = useState(blank());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tab, setTab] = useState<'main' | 'contact' | 'docs'>('main');
@@ -79,15 +79,15 @@ export default function ApplicationForm({
     return Object.keys(e).length === 0;
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!validate()) return;
-    if (editing) {
-      saveApp({ ...editing, ...form });
-    } else {
-      addApp(form);
-    }
-    toast(t('a.saved'));
-    onClose();
+    // Form menunggu server sebelum menutup. Kalau ditutup lebih dulu lalu
+    // penyimpanan gagal, seluruh isian pengguna hilang dan harus diketik ulang.
+    // Pesan suksesnya dititipkan ke store — hanya store yang tahu hasilnya.
+    const ok = editing
+      ? await saveApp({ ...editing, ...form }, t('a.saved'))
+      : await addApp(form, t('a.saved'));
+    if (ok) onClose();
   };
 
   const tabs = [
@@ -108,7 +108,7 @@ export default function ApplicationForm({
           <Button variant="ghost" onClick={onClose}>
             {t('c.cancel')}
           </Button>
-          <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+          <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
             {t('c.save')}
           </Button>
         </>
@@ -217,8 +217,8 @@ export default function ApplicationForm({
               onChange={(v) => set('status', v as Status)}
               options={STATUS_KEYS.map((s) => ({
                 value: s,
-                label: t('status.' + s),
-                color: STATUSES.find((x) => x.key === s)!.color,
+                label: t(`status.${s}`),
+                color: statusMeta(s).color,
               }))}
             />
           </Field>
@@ -329,7 +329,7 @@ export default function ApplicationForm({
                     {doc.label}
                   </span>
                   <span className="block truncate text-[11.5px] text-[var(--ink-muted)]">
-                    {t('doc.cat.' + doc.category)} · {doc.version} · {fileSize(doc.size)}
+                    {t(`doc.cat.${doc.category}`)} · {doc.version} · {fileSize(doc.size)}
                   </span>
                 </span>
               </button>

@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, Progress, SearchInput, Select, Textarea } from '../components/ui';
 import { PREP_STATUSES } from '../lib/constants';
-import type { CompanyWish, PrepStatus } from '../lib/types';
+import type { CompanyWish, PrepStatus } from '@shared/types';
 import { cx, daysUntil, fmtDate, uid } from '../lib/utils';
 
 const PREP_COLOR: Record<PrepStatus, string> = {
@@ -30,7 +30,7 @@ const blank = (): CompanyWish => ({
 });
 
 export default function Wishlist() {
-  const { t, db, lang, saveWish, deleteWish, toast } = useStore();
+  const { t, db, lang, saveWish, deleteWish, saving } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -42,17 +42,17 @@ export default function Wishlist() {
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
     return db.wishes.filter(
-      (w) => !term || (w.company + ' ' + w.role + ' ' + w.skills.join(' ')).toLowerCase().includes(term),
+      (w) => !term || (`${w.company} ${w.role} ${w.skills.join(' ')}`).toLowerCase().includes(term),
     );
   }, [db.wishes, q]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.company.trim()) e.company = `${t('f.company')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length) return;
-    saveWish({ ...form, id: form.id || uid(), company: form.company.trim() });
-    toast(t('c.save') + ' ✓');
+    const ok = await saveWish({ ...form, id: form.id || uid(), company: form.company.trim() }, `${t('c.save')} ✓`);
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -113,7 +113,7 @@ export default function Wishlist() {
                   <div className="mb-1.5 flex items-center justify-between text-[11.5px]">
                     <span className="text-[var(--ink-muted)]">{t('w.prep')}</span>
                     <span style={{ color: PREP_COLOR[w.prep] }} className="font-medium">
-                      {t('w.prep.' + w.prep)}
+                      {t(`w.prep.${w.prep}`)}
                     </span>
                   </div>
                   <Progress value={PREP_PCT[w.prep]} color={PREP_COLOR[w.prep]} />
@@ -154,7 +154,7 @@ export default function Wishlist() {
                     </span>
                   )}
                   <div className="flex-1" />
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setForm(w);
                       setErr({});
@@ -164,7 +164,7 @@ export default function Wishlist() {
                   >
                     <Icon name="fi-rr-pencil" className="text-[11px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setConfirmId(w.id)}
                     className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >
@@ -186,7 +186,7 @@ export default function Wishlist() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>
@@ -210,7 +210,7 @@ export default function Wishlist() {
               <Select
                 value={form.prep}
                 onChange={(v) => setForm((f) => ({ ...f, prep: v as PrepStatus }))}
-                options={PREP_STATUSES.map((p) => ({ value: p, label: t('w.prep.' + p) }))}
+                options={PREP_STATUSES.map((p) => ({ value: p, label: t(`w.prep.${p}`) }))}
               />
             </Field>
             <Field label={t('w.personalDeadline')} hint={t('c.optional')}>
@@ -231,7 +231,7 @@ export default function Wishlist() {
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[11.5px] text-[var(--ink-soft)]"
                   >
                     {s}
-                    <button
+                    <button type="button"
                       onClick={() =>
                         setForm((f) => ({ ...f, skills: f.skills.filter((x) => x !== s) }))
                       }

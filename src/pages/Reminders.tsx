@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, Select, Textarea, Segmented } from '../components/ui';
 import { REMINDER_ICON, REMINDER_TYPES } from '../lib/constants';
-import type { Reminder, ReminderType } from '../lib/types';
+import type { Reminder, ReminderType } from '@shared/types';
 import { cx, fmtDateTime, relTime, uid } from '../lib/utils';
 
 const blank = (): Reminder => ({
@@ -17,7 +17,7 @@ const blank = (): Reminder => ({
 });
 
 export default function Reminders() {
-  const { t, db, lang, saveReminder, deleteReminder, toggleReminder, toast } = useStore();
+  const { t, db, lang, saveReminder, deleteReminder, toggleReminder, saving } = useStore();
   const tz = db.settings.timezone;
   const [filter, setFilter] = useState('open');
   const [open, setOpen] = useState(false);
@@ -34,19 +34,19 @@ export default function Reminders() {
     return out.sort((a, b) => +new Date(a.datetime) - +new Date(b.datetime));
   }, [db.reminders, filter]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = `${t('f.title')} ${t('c.required')}`;
     if (!form.datetime) e.datetime = `${t('f.date')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length) return;
-    saveReminder({
+    const ok = await saveReminder({
       ...form,
       id: form.id || uid(),
       title: form.title.trim(),
       datetime: new Date(form.datetime).toISOString(),
-    });
-    toast(t('r.saved'));
+    }, t('r.saved'));
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -104,7 +104,7 @@ export default function Reminders() {
                 )}
                 style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}
               >
-                <button
+                <button type="button"
                   onClick={() => toggleReminder(r.id)}
                   className={cx(
                     'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-all duration-200 cursor-pointer',
@@ -123,7 +123,7 @@ export default function Reminders() {
                       className="text-[11px] text-[var(--ink-muted)]"
                     />
                     <span className="text-[11px] uppercase tracking-[0.06em] text-[var(--ink-muted)]">
-                      {t('r.type.' + r.type)}
+                      {t(`r.type.${r.type}`)}
                     </span>
                   </div>
                   <p
@@ -150,13 +150,13 @@ export default function Reminders() {
                 </div>
 
                 <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  <button
+                  <button type="button"
                     onClick={() => edit(r)}
                     className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
                   >
                     <Icon name="fi-rr-pencil" className="text-[11px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setConfirmId(r.id)}
                     className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >
@@ -178,7 +178,7 @@ export default function Reminders() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>
@@ -197,7 +197,7 @@ export default function Reminders() {
               <Select
                 value={form.type}
                 onChange={(v) => setForm((f) => ({ ...f, type: v as ReminderType }))}
-                options={REMINDER_TYPES.map((x) => ({ value: x, label: t('r.type.' + x) }))}
+                options={REMINDER_TYPES.map((x) => ({ value: x, label: t(`r.type.${x}`) }))}
               />
             </Field>
             <Field label={t('f.date')} error={err.datetime}>

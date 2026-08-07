@@ -1,7 +1,9 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { StoreProvider, useStore } from './lib/store';
 import Layout from './components/Layout';
+import { PageSkeleton } from './components/ui';
 import Toaster from './components/Toaster';
+import AlertDialog from './components/AlertDialog';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Applications from './pages/Applications';
@@ -17,8 +19,18 @@ import Wishlist from './pages/Wishlist';
 import Settings from './pages/Settings';
 
 function Shell() {
-  const { db } = useStore();
+  const { db, loading } = useStore();
+  // Selama data pertama diambil, tampilkan kerangka di dalam layout — bukan
+  // layar kosong yang terlihat seperti aplikasi rusak.
   if (!db.user) return <Login />;
+  // Pengguna sudah dikenali, datanya belum sampai: kerangka di dalam layout.
+  if (loading) {
+    return (
+      <Layout>
+        <PageSkeleton />
+      </Layout>
+    );
+  }
   return (
     <Layout>
       <Routes>
@@ -43,10 +55,11 @@ function Shell() {
 export default function App() {
   return (
     <StoreProvider>
-      <HashRouter>
+      <BrowserRouter>
         <Shell />
-      </HashRouter>
+      </BrowserRouter>
       <Toaster />
+      <AlertDialog />
     </StoreProvider>
   );
 }

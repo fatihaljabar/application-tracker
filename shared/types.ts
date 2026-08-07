@@ -1,18 +1,22 @@
-export type WorkType = 'Remote' | 'Hybrid' | 'WFO';
-export type JobType = 'Full Time' | 'Part Time' | 'Internship' | 'Contract';
+export const WORK_TYPE_VALUES = ['Remote', 'Hybrid', 'WFO'] as const;
+export type WorkType = (typeof WORK_TYPE_VALUES)[number];
+export const JOB_TYPE_VALUES = ['Full Time', 'Part Time', 'Internship', 'Contract'] as const;
+export type JobType = (typeof JOB_TYPE_VALUES)[number];
 
-export type Status =
-  | 'wishlist'
-  | 'applied'
-  | 'screening'
-  | 'hr_interview'
-  | 'user_interview'
-  | 'technical_test'
-  | 'offer'
-  | 'accepted'
-  | 'rejected'
-  | 'ghosted'
-  | 'withdrawn';
+export const STATUS_VALUES = [
+  'wishlist',
+  'applied',
+  'screening',
+  'hr_interview',
+  'user_interview',
+  'technical_test',
+  'offer',
+  'accepted',
+  'rejected',
+  'ghosted',
+  'withdrawn',
+] as const;
+export type Status = (typeof STATUS_VALUES)[number];
 
 export interface StatusEvent {
   status: Status;
@@ -47,16 +51,18 @@ export interface Application {
   updatedAt: string;
 }
 
-export type ActivityType =
-  | 'created'
-  | 'status'
-  | 'email'
-  | 'interview'
-  | 'test'
-  | 'followup'
-  | 'offer'
-  | 'note'
-  | 'document';
+export const ACTIVITY_TYPE_VALUES = [
+  'created',
+  'status',
+  'email',
+  'interview',
+  'test',
+  'followup',
+  'offer',
+  'note',
+  'document',
+] as const;
+export type ActivityType = (typeof ACTIVITY_TYPE_VALUES)[number];
 
 export interface Activity {
   id: string;
@@ -67,12 +73,14 @@ export interface Activity {
   date: string;
 }
 
-export type ReminderType =
-  | 'interview'
-  | 'technical_test'
-  | 'followup'
-  | 'deadline'
-  | 'cv_validity';
+export const REMINDER_TYPE_VALUES = [
+  'interview',
+  'technical_test',
+  'followup',
+  'deadline',
+  'cv_validity',
+] as const;
+export type ReminderType = (typeof REMINDER_TYPE_VALUES)[number];
 
 export interface Reminder {
   id: string;
@@ -84,14 +92,16 @@ export interface Reminder {
   done: boolean;
 }
 
-export type DocCategory =
-  | 'cv'
-  | 'cover_letter'
-  | 'portfolio'
-  | 'certificate'
-  | 'diploma'
-  | 'transcript'
-  | 'other';
+export const DOC_CATEGORY_VALUES = [
+  'cv',
+  'cover_letter',
+  'portfolio',
+  'certificate',
+  'diploma',
+  'transcript',
+  'other',
+] as const;
+export type DocCategory = (typeof DOC_CATEGORY_VALUES)[number];
 
 export interface DocFile {
   id: string;
@@ -109,6 +119,8 @@ export interface DocFile {
 }
 
 export interface QA {
+  /** Identitas stabil supaya React tidak salah memasangkan baris saat satu pasangan dihapus. */
+  id: string;
   q: string;
   a: string;
 }
@@ -137,7 +149,8 @@ export interface Bookmark {
   savedAt: string;
 }
 
-export type PrepStatus = 'not_started' | 'research' | 'preparing' | 'ready';
+export const PREP_STATUS_VALUES = ['not_started', 'research', 'preparing', 'ready'] as const;
+export type PrepStatus = (typeof PREP_STATUS_VALUES)[number];
 
 export interface CompanyWish {
   id: string;

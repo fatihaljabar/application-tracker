@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -29,14 +30,22 @@ type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'ghost' | 'outline' | 'soft' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   icon?: string;
+  /**
+   * Sejak menyimpan menunggu balasan server, tombol tanpa penanda terlihat
+   * menggantung dan bisa ditekan dua kali. Ikonnya diganti pemutar, tombolnya
+   * dinonaktifkan — ukuran dan warnanya tidak berubah sama sekali.
+   */
+  pending?: boolean;
 };
 
 export function Button({
   variant = 'outline',
   size = 'md',
   icon,
+  pending = false,
   className,
   children,
+  disabled,
   ...rest
 }: BtnProps) {
   const base =
@@ -57,10 +66,56 @@ export function Button({
     icon: 'h-9 w-9 text-[13px]',
   };
   return (
-    <button className={cx(base, variants[variant], sizes[size], className)} {...rest}>
-      {icon && <Icon name={icon} className="text-[1.05em]" />}
+    <button
+      type="button"
+      disabled={disabled || pending}
+      className={cx(base, variants[variant], sizes[size], className)}
+      aria-busy={pending || undefined}
+      {...rest}
+    >
+      {pending ? (
+        <Icon name="fi-rr-spinner" className="animate-spin text-[1.05em]" />
+      ) : (
+        icon && <Icon name={icon} className="text-[1.05em]" />
+      )}
       {children}
     </button>
+  );
+}
+
+/* -------------------------------------------------------------- skeleton */
+/**
+ * Penanda muat. Bentuknya meniru kartu yang digantikannya: sudut dan warna
+ * memakai token yang sama (`--surface-2`, `--line`), tanpa keyframe baru —
+ * denyutnya memakai animasi bawaan Tailwind.
+ */
+export function Skeleton({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cx(
+        'animate-pulse rounded-2xl border border-[var(--line)] bg-[var(--surface-2)]',
+        className,
+      )}
+    />
+  );
+}
+
+/** Kerangka isi halaman saat data pertama kali diambil. */
+export function PageSkeleton() {
+  return (
+    <div className="anim-fade" aria-busy="true">
+      <Skeleton className="mb-7 h-9 w-64 rounded-xl" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-[132px]" />
+        ))}
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+        <Skeleton className="h-[300px]" />
+        <Skeleton className="h-[300px]" />
+      </div>
+    </div>
   );
 }
 
@@ -81,6 +136,7 @@ export function Field({
   className?: string;
 }) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: {children} hampir selalu berisi Input atau Textarea, dan label pembungkus memang benar untuk keduanya. Aturan ini tidak bisa menembus prop children untuk membuktikannya.
     <label className={cx('block', className)}>
       {label && (
         <span className="mb-1.5 flex items-center gap-1 text-[12.5px] font-medium text-[var(--ink-soft)]">
@@ -151,18 +207,20 @@ export function Select({
   const listRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
 
-  const place = () => {
+  // useCallback supaya identitasnya stabil dan bisa dipakai sebagai dependensi efek
+  // sekaligus sebagai listener yang benar-benar bisa dilepas kembali.
+  const place = useCallback(() => {
     const el = btnRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
     const spaceBelow = window.innerHeight - r.bottom;
     const up = spaceBelow < 240 && r.top > spaceBelow;
     setCoords({ top: up ? r.top - 6 : r.bottom + 6, left: r.left, width: r.width, up });
-  };
+  }, []);
 
   useLayoutEffect(() => {
     if (open) place();
-  }, [open]);
+  }, [open, place]);
 
   useEffect(() => {
     if (!open) return;
@@ -184,7 +242,7 @@ export function Select({
       window.removeEventListener('scroll', place, true);
       window.removeEventListener('resize', place);
     };
-  }, [open]);
+  }, [open, place]);
 
   return (
     <>
@@ -380,7 +438,10 @@ export function Modal({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+      {/* Lapisan gelap hanya pintasan mouse; pengguna papan ketik memakai Escape. */}
       <div
+        role="presentation"
+        aria-hidden="true"
         className="anim-fade absolute inset-0 bg-[#1a1916]/35 backdrop-blur-[3px]"
         onClick={onClose}
       />
@@ -399,7 +460,7 @@ export function Modal({
               <p className="mt-0.5 text-[12.5px] text-[var(--ink-muted)]">{subtitle}</p>
             )}
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--ink-muted)] transition-all duration-200 hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] focus-ring cursor-pointer"
           >
@@ -427,14 +488,18 @@ export function Confirm({
   cancelLabel,
   onConfirm,
   onClose,
+  danger = true,
 }: {
   open: boolean;
   title: string;
   description?: string;
   confirmLabel: string;
-  cancelLabel: string;
+  /** Tanpa label ini tombol batal tidak dirender — bentuk itu dipakai dialog galat. */
+  cancelLabel?: string;
   onConfirm: () => void;
   onClose: () => void;
+  /** Dialog galat bukan tindakan merusak, jadi tombolnya tidak selalu merah. */
+  danger?: boolean;
 }) {
   return (
     <Modal
@@ -444,12 +509,14 @@ export function Confirm({
       size="sm"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
-            {cancelLabel}
-          </Button>
+          {cancelLabel && (
+            <Button variant="ghost" onClick={onClose}>
+              {cancelLabel}
+            </Button>
+          )}
           <Button
             variant="primary"
-            className="bg-[var(--danger)]"
+            className={danger ? 'bg-[var(--danger)]' : undefined}
             onClick={() => {
               onConfirm();
               onClose();
@@ -485,7 +552,7 @@ export function Badge({
       )}
       style={
         color
-          ? { color, background: color + '1a', border: `1px solid ${color}33` }
+          ? { color, background: `${color}1a`, border: `1px solid ${color}33` }
           : undefined
       }
     >
@@ -499,16 +566,18 @@ export function Badge({
 export function Toggle({
   checked,
   onChange,
+  ...rest
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-}) {
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'>) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
+      {...rest}
       className={cx(
         'relative h-6 w-11 shrink-0 rounded-full transition-colors duration-300 focus-ring cursor-pointer',
         checked ? 'bg-[var(--accent)]' : 'bg-[var(--line-strong)]',
@@ -616,7 +685,7 @@ export function SearchInput({
         className={cx(inputCls, 'pl-10 pr-9')}
       />
       {value && (
-        <button
+        <button type="button"
           onClick={() => onChange('')}
           className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
         >

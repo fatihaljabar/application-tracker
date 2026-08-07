@@ -1,4 +1,4 @@
-import type { DocCategory, PrepStatus, ReminderType, Status } from './types';
+import type { DocCategory, PrepStatus, ReminderType, Status } from '@shared/types';
 
 export const STATUSES: { key: Status; color: string; dot: string }[] = [
   { key: 'wishlist', color: '#9a958b', dot: '#b4afa4' },

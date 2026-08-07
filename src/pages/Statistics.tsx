@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Empty, Icon, Progress, SectionTitle } from '../components/ui';
 import { FUNNEL_ORDER, statusMeta, STATUSES } from '../lib/constants';
-import type { Status } from '../lib/types';
+import type { Status } from '@shared/types';
 
 const RANK: Record<Status, number> = {
   wishlist: 0,
@@ -62,7 +62,9 @@ export default function Statistics() {
 
     // top positions
     const byPos = new Map<string, number>();
-    apps.forEach((a) => byPos.set(a.position, (byPos.get(a.position) ?? 0) + 1));
+    apps.forEach((a) => {
+      byPos.set(a.position, (byPos.get(a.position) ?? 0) + 1);
+    });
     const topPositions = Array.from(byPos.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
     // avg response time
@@ -71,7 +73,7 @@ export default function Statistics() {
       if (!a.appliedDate) return;
       const first = a.history.find((h) => RANK[h.status] >= 2 || h.status === 'rejected');
       if (!first) return;
-      const dd = (+new Date(first.at) - +new Date(a.appliedDate + 'T00:00:00')) / 86400000;
+      const dd = (+new Date(first.at) - +new Date(`${a.appliedDate}T00:00:00`)) / 86400000;
       if (dd >= 0 && dd < 400) diffs.push(dd);
     });
     const avgResponse = diffs.length
@@ -80,11 +82,15 @@ export default function Statistics() {
 
     // sources
     const bySource = new Map<string, number>();
-    apps.forEach((a) => bySource.set(a.source, (bySource.get(a.source) ?? 0) + 1));
+    apps.forEach((a) => {
+      bySource.set(a.source, (bySource.get(a.source) ?? 0) + 1);
+    });
     const sources = Array.from(bySource.entries()).sort((a, b) => b[1] - a[1]);
 
     const byWork = new Map<string, number>();
-    apps.forEach((a) => byWork.set(a.workType, (byWork.get(a.workType) ?? 0) + 1));
+    apps.forEach((a) => {
+      byWork.set(a.workType, (byWork.get(a.workType) ?? 0) + 1);
+    });
     const workTypes = Array.from(byWork.entries()).sort((a, b) => b[1] - a[1]);
 
     const byStatus = STATUSES.map((st) => ({
@@ -158,7 +164,7 @@ export default function Statistics() {
             {s.funnel.map((f, i) => (
               <div key={f.status} className="flex items-center gap-3">
                 <span className="w-[104px] shrink-0 truncate text-[12px] text-[var(--ink-soft)]">
-                  {t('status.' + f.status)}
+                  {t(`status.${f.status}`)}
                 </span>
                 <div className="h-7 flex-1 overflow-hidden rounded-lg bg-[var(--bg-soft)]">
                   <div
@@ -266,10 +272,10 @@ export default function Statistics() {
               <span
                 key={st.key}
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px]"
-                style={{ background: st.color + '15', color: st.color }}
+                style={{ background: `${st.color}15`, color: st.color }}
               >
                 <Icon name="fi-rr-circle-small" className="text-[8px]" />
-                {t('status.' + st.key)} {st.count}
+                {t(`status.${st.key}`)} {st.count}
               </span>
             ))}
           </div>

@@ -1,31 +1,79 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Icon } from '../components/ui';
+import { loadGoogleIdentity } from '../lib/google';
+import { initials } from '../lib/utils';
 import { useStore } from '../lib/store';
-import { Button, Icon } from '../components/ui';
-
-const ACCOUNTS = [
-  { name: 'Rani Kusuma', email: 'rani.kusuma@gmail.com', hue: 168 },
-  { name: 'Bagus Pratama', email: 'baguspratama@gmail.com', hue: 28 },
-];
 
 export default function Login() {
   const { t, signIn, toast } = useStore();
-  const [chooser, setChooser] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const slot = useRef<HTMLDivElement>(null);
+  const busyRef = useRef(false);
 
-  const enter = (name: string, email: string, provider: 'google' | 'guest') => {
-    signIn({
-      name,
-      email,
-      provider,
-      avatar: name
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase(),
-      since: new Date().toISOString(),
-    });
-    toast(t('l.signedIn'));
-  };
+  useEffect(() => {
+    let cancelled = false;
+
+    const signInWith = async (credential: string) => {
+      if (busyRef.current) return;
+      busyRef.current = true;
+      setBusy(true);
+      try {
+        let res: Response;
+        try {
+          res = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential }),
+          });
+        } catch {
+          // Server tidak menjawab sama sekali. Tanpa cabang ini pengguna melihat
+          // pesan parser JSON yang tidak menjelaskan apa pun.
+          throw new Error(t('l.serverDown'));
+        }
+
+        // Balasan bisa saja bukan JSON — misalnya galat proxy saat backend mati.
+        const isJson = res.headers.get('content-type')?.includes('application/json');
+        const data = isJson ? await res.json() : null;
+        if (!res.ok || !data) {
+          throw new Error(data?.error?.message ?? t('l.serverDown'));
+        }
+        signIn({
+          name: data.user.name,
+          email: data.user.email,
+          provider: 'google',
+          // Antarmuka menampilkan field ini sebagai teks di dalam lingkaran,
+          // jadi isinya inisial — bukan URL foto Google.
+          avatar: initials(data.user.name),
+          since: data.user.since,
+        });
+        toast(t('l.signedIn'));
+      } catch (e) {
+        toast(e instanceof Error ? e.message : t('l.signInFailed'), 'error');
+      } finally {
+        busyRef.current = false;
+        setBusy(false);
+      }
+    };
+
+    loadGoogleIdentity()
+      .then((id) => {
+        if (cancelled || !slot.current) return;
+        id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: (res) => void signInWith(res.credential),
+          cancel_on_tap_outside: true,
+        });
+        // Tombol Google dirender di sini lalu ditumpuk tak terlihat di atas tombol
+        // kita, supaya tampilan tetap sama persis sementara klik yang diterima
+        // Google tetap klik pengguna yang asli.
+        id.renderButton(slot.current, { type: 'standard', width: 320 });
+      })
+      .catch(() => toast(t('l.signInFailed'), 'error'));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [signIn, toast, t]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--bg)]">
@@ -49,8 +97,7 @@ export default function Login() {
             </span>
           </div>
           <h1 className="mt-8 max-w-lg text-[38px] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--ink)] sm:text-[52px]">
-            {t('l.welcome')}.
-            <span className="block text-[var(--ink-muted)]">{t('tagline')}.</span>
+            {t('l.welcome')}.<span className="block text-[var(--ink-muted)]">{t('tagline')}.</span>
           </h1>
           <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-[var(--ink-soft)]">
             {t('l.desc')}
@@ -72,78 +119,56 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="anim-fade-up rounded-[26px] border border-[var(--line)] bg-[var(--surface)] p-7 shadow-[var(--shadow-soft)] sm:p-9" style={{ animationDelay: '90ms' }}>
-          {!chooser ? (
-            <>
-              <h2 className="text-[19px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                {t('l.choose')}
-              </h2>
-              <p className="mt-1.5 text-[13px] text-[var(--ink-muted)]">{t('l.chooseDesc')}</p>
-              <button
-                onClick={() => setChooser(true)}
-                className="mt-7 flex w-full items-center justify-center gap-3 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-5 py-3.5 text-[14px] font-medium text-[var(--ink)] transition-all duration-200 hover:bg-[var(--surface-2)] active:scale-[0.985] cursor-pointer"
-              >
-                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                  <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.6 9.5 24 9.5z" />
-                  <path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.2-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.3-4.5 6.9l7.1 5.5c4.2-3.9 6.6-9.6 6.6-16.9z" />
-                  <path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z" />
-                  <path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.3-5.5l-7.1-5.5c-2 1.4-4.6 2.2-8.2 2.2-6.4 0-11.7-3.7-13.6-9.3l-7.8 6.1C6.5 42.6 14.6 48 24 48z" />
-                </svg>
-                {t('l.google')}
-              </button>
-              <div className="my-5 flex items-center gap-3 text-[11.5px] uppercase tracking-[0.1em] text-[var(--ink-muted)]">
-                <span className="h-px flex-1 bg-[var(--line)]" />atau<span className="h-px flex-1 bg-[var(--line)]" />
-              </div>
-              <Button
-                variant="soft"
-                size="lg"
-                className="w-full"
-                icon="fi-rr-user"
-                onClick={() => enter('Tamu', 'guest@local', 'guest')}
-              >
-                {t('l.guest')}
-              </Button>
-            </>
-          ) : (
-            <div className="anim-fade">
-              <button
-                onClick={() => setChooser(false)}
-                className="mb-5 inline-flex items-center gap-1.5 text-[12.5px] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] cursor-pointer"
-              >
-                <Icon name="fi-rr-angle-left" className="text-[11px]" /> {t('c.cancel')}
-              </button>
-              <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                {t('l.choose')}
-              </h2>
-              <div className="mt-5 space-y-2">
-                {ACCOUNTS.map((a) => (
-                  <button
-                    key={a.email}
-                    onClick={() => enter(a.name, a.email, 'google')}
-                    className="flex w-full items-center gap-3.5 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3.5 text-left transition-all duration-200 hover:border-[var(--line-strong)] hover:bg-[var(--bg-soft)] active:scale-[0.99] cursor-pointer"
-                  >
-                    <span
-                      className="grid h-10 w-10 place-items-center rounded-full text-[13px] font-semibold"
-                      style={{
-                        background: `hsl(${a.hue} 34% 90%)`,
-                        color: `hsl(${a.hue} 40% 30%)`,
-                      }}
-                    >
-                      {a.name.split(' ').map((w) => w[0]).join('')}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13.5px] font-medium text-[var(--ink)]">
-                        {a.name}
-                      </span>
-                      <span className="block truncate text-[12px] text-[var(--ink-muted)]">
-                        {a.email}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        <div
+          className="anim-fade-up rounded-[26px] border border-[var(--line)] bg-[var(--surface)] p-7 shadow-[var(--shadow-soft)] sm:p-9"
+          style={{ animationDelay: '90ms' }}
+        >
+          <h2 className="text-[19px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
+            {t('l.choose')}
+          </h2>
+          <p className="mt-1.5 text-[13px] text-[var(--ink-muted)]">{t('l.chooseDesc')}</p>
+
+          <div className="relative mt-7">
+            <button
+              type="button"
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-3 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-5 py-3.5 text-[14px] font-medium text-[var(--ink)] transition-all duration-200 hover:bg-[var(--surface-2)] active:scale-[0.985] cursor-pointer disabled:opacity-60"
+            >
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                <path
+                  fill="#EA4335"
+                  d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.6 9.5 24 9.5z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M46.1 24.6c0-1.6-.1-3.2-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.3-4.5 6.9l7.1 5.5c4.2-3.9 6.6-9.6 6.6-16.9z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M24 48c6.2 0 11.5-2 15.3-5.5l-7.1-5.5c-2 1.4-4.6 2.2-8.2 2.2-6.4 0-11.7-3.7-13.6-9.3l-7.8 6.1C6.5 42.6 14.6 48 24 48z"
+                />
+              </svg>
+              {busy ? t('l.signingIn') : t('l.google')}
+            </button>
+            {/* Tombol asli Google: menutupi tombol di atas, tidak terlihat.
+                Klik pengguna sampai ke Google secara sah, tampilan tetap milik kita.
+
+                Tombol Google tingginya tetap 40px sementara tombol kita 51px, jadi
+                anaknya diregangkan vertikal supaya seluruh permukaan bereaksi —
+                tanpa ini, sekitar 5px di tepi atas dan bawah tidak melakukan apa pun.
+                Peregangan tidak terlihat karena lapisannya transparan. */}
+            <div
+              ref={slot}
+              aria-hidden="true"
+              className={`absolute inset-0 overflow-hidden opacity-0 [&>div]:origin-center [&>div]:scale-y-[1.3] ${busy ? 'pointer-events-none' : ''}`}
+              style={{ colorScheme: 'light' }}
+            />
+          </div>
+
           <p className="mt-7 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
             {t('l.local')}
           </p>

@@ -33,8 +33,7 @@ export default function Settings() {
   const palette = ['#2f6f5e', '#5b7fa6', '#b58a52', '#a6708f', '#6f7fb5', '#8a72b0', '#b06565'];
 
   const save = (p: Parameters<typeof updateSettings>[0]) => {
-    updateSettings(p);
-    toast(t('set.saved'));
+    updateSettings(p, t('set.saved'));
   };
 
   return (
@@ -47,7 +46,7 @@ export default function Settings() {
           <Row title={t('set.theme')}>
             <div className="inline-flex gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-2)] p-1">
               {(['light', 'dark'] as const).map((th) => (
-                <button
+                <button type="button"
                   key={th}
                   onClick={() => save({ theme: th })}
                   className={cx(
@@ -179,7 +178,7 @@ export default function Settings() {
               icon="fi-rr-download"
               onClick={() => {
                 downloadJSON(db, 'lacak-lamaran-export.json');
-                toast(t('c.export') + ' ✓');
+                toast(`${t('c.export')} ✓`);
               }}
             >
               {t('c.export')}

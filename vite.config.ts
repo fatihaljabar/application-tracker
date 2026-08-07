@@ -1,25 +1,23 @@
-import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { fileURLToPath, URL } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
-export default defineConfig(async ({ mode }) => {
-  const plugins = [react(), tailwindcss()];
-  try {
-    // @ts-ignore
-    const m = await import('./.vite-source-tags.js');
-    plugins.push(m.sourceTags());
-  } catch {}
-
-  const env = loadEnv(mode, process.cwd(), ['VITE_', 'NEXT_PUBLIC_']);
-  const processEnvDefines: Record<string, string> = {};
-  for (const [key, value] of Object.entries(env)) {
-    processEnvDefines[`process.env.${key}`] = JSON.stringify(value);
-  }
-
-  return {
-    plugins,
-    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
-    define: processEnvDefines,
-  };
-})
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
+    },
+  },
+  server: {
+    // Port dikunci: Google hanya menerima origin yang terdaftar di Cloud Console.
+    // Kalau Vite diam-diam pindah ke port lain, login gagal dengan pesan yang
+    // menyesatkan. Lebih baik gagal start dengan jelas.
+    port: 5173,
+    strictPort: true,
+    // Panggilan /api saat ngoding diteruskan ke proses Node, bukan ke Vite.
+    proxy: { '/api': 'http://localhost:3000' },
+  },
+});

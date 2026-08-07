@@ -3,8 +3,8 @@ import { useStore } from '../lib/store';
 import { PageHeader, CompanyAvatar } from '../components/shared';
 import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select, Textarea, Segmented } from '../components/ui';
 import { SOURCES } from '../lib/constants';
-import type { Bookmark } from '../lib/types';
-import { cx, daysUntil, fmtDate, todayISO, uid } from '../lib/utils';
+import type { Bookmark } from '@shared/types';
+import { cx, daysUntil, fmtDate, safeUrl, todayISO, uid } from '../lib/utils';
 
 const blank = (): Bookmark => ({
   id: '',
@@ -19,7 +19,7 @@ const blank = (): Bookmark => ({
 });
 
 export default function Bookmarks() {
-  const { t, db, lang, saveBookmark, deleteBookmark, toggleBookmarkFav, addApp, toast } = useStore();
+  const { t, db, lang, saveBookmark, deleteBookmark, toggleBookmarkFav, addApp, toast, saving } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState('all');
@@ -31,20 +31,20 @@ export default function Bookmarks() {
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
     return db.bookmarks
-      .filter((b) => !term || (b.company + ' ' + b.position + ' ' + b.note).toLowerCase().includes(term))
+      .filter((b) => !term || (`${b.company} ${b.position} ${b.note}`).toLowerCase().includes(term))
       .filter((b) => filter !== 'fav' || b.favorite)
       .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.savedAt.localeCompare(a.savedAt));
   }, [db.bookmarks, q, filter]);
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!form.company.trim()) e.company = `${t('f.company')} ${t('c.required')}`;
     if (!form.position.trim()) e.position = `${t('f.position')} ${t('c.required')}`;
     if (form.url && !/^https?:\/\//i.test(form.url)) e.url = 'URL harus diawali http:// atau https://';
     setErr(e);
     if (Object.keys(e).length) return;
-    saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() });
-    toast(t('c.save') + ' ✓');
+    const ok = await saveBookmark({ ...form, id: form.id || uid(), company: form.company.trim(), position: form.position.trim() }, `${t('c.save')} ✓`);
+    if (!ok) return;
     setOpen(false);
   };
 
@@ -114,6 +114,7 @@ export default function Bookmarks() {
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {list.map((b, i) => {
             const dl = daysUntil(b.deadline);
+            const url = safeUrl(b.url);
             return (
               <article
                 key={b.id}
@@ -128,7 +129,7 @@ export default function Bookmarks() {
                     </h3>
                     <p className="truncate text-[12.5px] text-[var(--ink-muted)]">{b.position}</p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => toggleBookmarkFav(b.id)}
                     className={cx(
                       'grid h-8 w-8 shrink-0 place-items-center rounded-full transition-all duration-200 cursor-pointer',
@@ -167,13 +168,13 @@ export default function Bookmarks() {
                   <Button size="sm" variant="soft" icon="fi-rr-paper-plane" onClick={() => convert(b)}>
                     {t('b.convert')}
                   </Button>
-                  {b.url && (
-                    <a href={b.url} target="_blank" rel="noreferrer">
+                  {url && (
+                    <a href={url} target="_blank" rel="noreferrer">
                       <Button size="sm" variant="ghost" icon="fi-rr-link-alt" />
                     </a>
                   )}
                   <div className="flex-1" />
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setForm(b);
                       setErr({});
@@ -183,7 +184,7 @@ export default function Bookmarks() {
                   >
                     <Icon name="fi-rr-pencil" className="text-[11px]" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setConfirmId(b.id)}
                     className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >
@@ -205,7 +206,7 @@ export default function Bookmarks() {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>

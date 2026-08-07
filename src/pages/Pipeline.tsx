@@ -5,11 +5,11 @@ import { Button, Icon, SearchInput } from '../components/ui';
 import ApplicationForm from '../components/ApplicationForm';
 import AppDetail from '../components/AppDetail';
 import { STATUSES } from '../lib/constants';
-import type { Application, Status } from '../lib/types';
+import type { Application, Status } from '@shared/types';
 import { cx, daysUntil, fmtDate } from '../lib/utils';
 
 export default function Pipeline() {
-  const { t, db, lang, moveApp, toast } = useStore();
+  const { t, db, lang, moveApp } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function Pipeline() {
     return db.apps.filter(
       (a) =>
         !a.archived &&
-        (!term || (a.company + ' ' + a.position).toLowerCase().includes(term)),
+        (!term || (`${a.company} ${a.position}`).toLowerCase().includes(term)),
     );
   }, [db.apps, q]);
 
@@ -32,8 +32,7 @@ export default function Pipeline() {
     if (dragId) {
       const app = db.apps.find((a) => a.id === dragId);
       if (app && app.status !== status) {
-        moveApp(dragId, status);
-        toast(`${app.company} → ${t('status.' + status)}`);
+        moveApp(dragId, status, `${app.company} → ${t(`status.${status}`)}`);
       }
     }
     setDragId(null);
@@ -68,6 +67,7 @@ export default function Pipeline() {
           {STATUSES.map((s, ci) => {
             const items = apps.filter((a) => a.status === s.key);
             return (
+              // biome-ignore lint/a11y/noStaticElementInteractions: kolom hanya target lepas untuk mouse. Pengguna papan ketik memindahkan status lewat pilihan status di halaman detail, jadi tidak ada jalur yang hilang.
               <section
                 key={s.key}
                 onDragOver={(e) => {
@@ -87,7 +87,7 @@ export default function Pipeline() {
                 <header className="flex items-center gap-2 px-3.5 py-3">
                   <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
                   <h3 className="flex-1 truncate text-[12.5px] font-semibold text-[var(--ink)]">
-                    {t('status.' + s.key)}
+                    {t(`status.${s.key}`)}
                   </h3>
                   <span className="rounded-full bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-muted)]">
                     {items.length}
@@ -98,7 +98,8 @@ export default function Pipeline() {
                   {items.map((a) => {
                     const dl = daysUntil(a.deadline);
                     return (
-                      <article
+                      // biome-ignore lint/a11y/useSemanticElements: kartu ini sekaligus sumber seret HTML5 dan berisi elemen blok, dua hal yang tidak sah di dalam <button> asli.
+                      <div
                         key={a.id}
                         draggable
                         onDragStart={() => setDragId(a.id)}
@@ -107,6 +108,18 @@ export default function Pipeline() {
                           setOverCol(null);
                         }}
                         onClick={() => setDetail(a)}
+                        // Seret-dan-lepas tidak berfungsi dengan papan ketik maupun layar sentuh.
+                        // Kartu harus tetap bisa difokus dan dibuka dengan Enter atau Spasi;
+                        // pemindahan status dilakukan lewat pilihan status di halaman detail.
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setDetail(a);
+                          }
+                        }}
+                        aria-label={`${a.company} — ${a.position}`}
                         className={cx(
                           'cursor-grab rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3 transition-all duration-200 hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-soft)] active:cursor-grabbing',
                           dragId === a.id && 'dragging',
@@ -141,11 +154,11 @@ export default function Pipeline() {
                             </span>
                           )}
                         </div>
-                      </article>
+                      </div>
                     );
                   })}
 
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setEditing(null);
                       setPresetStatus(s.key);
