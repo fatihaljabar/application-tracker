@@ -5,6 +5,7 @@ import { db } from '../db/client.ts';
 import { settings, users } from '../db/schema.ts';
 import { verifyGoogleIdToken } from '../lib/google.ts';
 import { ApiError } from '../lib/middleware.ts';
+import { perIp, rateLimit } from '../lib/ratelimit.ts';
 import { clearSession, readSession, setSession } from '../lib/session.ts';
 
 export const authRouter = Router();
@@ -20,7 +21,18 @@ function publicUser(row: typeof users.$inferSelect) {
   };
 }
 
-authRouter.post('/google', async (req, res) => {
+/**
+ * Batas masuk lebih ketat daripada batas tulis umum: endpoint ini bisa dipanggil
+ * tanpa sesi dan setiap panggilan memicu permintaan keluar ke Google.
+ */
+const loginLimit = rateLimit({
+  max: 10,
+  windowMs: 60_000,
+  key: perIp,
+  message: 'Terlalu banyak percobaan masuk. Tunggu semenit, lalu coba lagi.',
+});
+
+authRouter.post('/google', loginLimit, async (req, res) => {
   const credential = (req.body as { credential?: unknown })?.credential;
   if (typeof credential !== 'string') {
     throw new ApiError(400, 'bad_request', 'Token Google tidak dikirim.', 'credential');
