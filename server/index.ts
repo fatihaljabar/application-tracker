@@ -57,9 +57,31 @@ app.use('/api', (req, res, next) => {
   writeLimit(req, res, next);
 });
 
+/**
+ * Hasil pemeriksaan database ditahan sebentar, bukan diulang tiap permintaan.
+ *
+ * Ancaman aslinya bukan "terlalu banyak permintaan" melainkan "terlalu banyak
+ * query": endpoint ini satu-satunya tanpa sesi yang menyentuh database, dan pool
+ * dibatasi 5 koneksi karena hosting bersama (TECHNICAL § 5). Pembatasan laju
+ * saja tidak cukup di sini — penghitungnya di memori proses, dan di LiteSpeed
+ * proses itu didaur ulang, terbukti saat diuji di produksi.
+ *
+ * Cache ini tidak menghitung apa pun, jadi kebal terhadap restart maupun jumlah
+ * proses: seribu permintaan tetap jadi paling banyak enam query per menit.
+ *
+ * Harganya: kalau database mati, endpoint ini masih menjawab "ok" sampai
+ * sepuluh detik. Diterima — ini alat diagnosis, bukan pemantau kesehatan.
+ */
+const HEALTH_TTL_MS = 10_000;
+let healthCache: { at: number; name: string; version: string } | null = null;
+
 app.get('/api/health', healthLimit, async (_req, res) => {
-  const info = await assertDatabaseReachable();
-  res.json({ ok: true, database: info.name, mysql: info.version });
+  const now = Date.now();
+  if (!healthCache || now - healthCache.at >= HEALTH_TTL_MS) {
+    const info = await assertDatabaseReachable();
+    healthCache = { at: now, name: info.name, version: info.version };
+  }
+  res.json({ ok: true, database: healthCache.name, mysql: healthCache.version });
 });
 
 app.use('/api/auth', authRouter);
