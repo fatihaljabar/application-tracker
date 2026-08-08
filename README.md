@@ -28,17 +28,21 @@ documents, and does not calculate anything.
 |---|---|
 | Frontend | TypeScript · React 19 · Vite · Tailwind v4 |
 | Backend | Node.js · Express 5 — one process serving `/api/*` and the built frontend |
-| Database | MySQL · Drizzle ORM |
+| Database | MySQL or MariaDB · Drizzle ORM |
 | Auth | Google Identity Services → signed session cookie |
 | Files | Cloudflare R2 via presigned URLs *(planned)* |
 | Email | Resend *(planned)* |
 
-Six runtime dependencies: `express`, `cookie-parser`, `drizzle-orm`, `mysql2`,
-`aws4fetch`, `zod`. No framework beyond React, no Docker, no queue.
+Six server runtime dependencies: `express`, `cookie-parser`, `drizzle-orm`, `mysql2`,
+`aws4fetch`, `zod`. No framework beyond React, no Docker, no queue. (`package.json`
+lists the frontend and build packages under `dependencies` too — the six refers to
+what the Node process itself loads.)
 
 ## Running locally
 
-Requires Node 22+ and a MySQL 8 database.
+Requires Node 22.6+ and MySQL 8 or MariaDB.
+
+Development runs against MySQL 8; the deployed instance runs MariaDB 11.8, which is what shared hosting provides. The schema and every migration apply unchanged on both. Node 22.6 is the real floor because the server runs TypeScript through Node's own type stripping, which does not exist before that.
 
 ```bash
 npm install
