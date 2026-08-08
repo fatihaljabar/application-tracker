@@ -280,7 +280,11 @@ export function Select({
         createPortal(
           <div
             ref={listRef}
-            className="anim-pop fixed z-[90] max-h-64 overflow-auto rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-[var(--shadow-soft)]"
+            // Urutan lapisan: Select 110 > Modal 100 > Menu 95, dan Toaster 200 di
+            // atas semuanya. Select WAJIB di atas Modal karena dibuka dari dalam
+            // modal di delapan berkas — di z-90 daftarnya tetap terbuka, cuma
+            // tersembunyi di belakang modal, jadi terlihat seperti tidak berfungsi.
+            className="anim-pop fixed z-[110] max-h-64 overflow-auto rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-[var(--shadow-soft)]"
             style={{
               top: coords.up ? undefined : coords.top,
               bottom: coords.up ? window.innerHeight - coords.top : undefined,
