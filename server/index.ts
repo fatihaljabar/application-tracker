@@ -6,6 +6,7 @@ import express from 'express';
 import { assertDatabaseReachable } from './db/client.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
+import { perIp, perUserOrIp, rateLimit } from './lib/ratelimit.ts';
 import { activitiesRouter } from './routes/activities.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
@@ -18,14 +19,45 @@ import { tagsRouter } from './routes/tags.ts';
 import { wishesRouter } from './routes/wishes.ts';
 
 const app = express();
+
+// Angka dari PRD/Notion: 10 percobaan masuk per menit per IP, 60 permintaan
+// tulis per menit per pengguna. /health tidak ada di sana — ditambahkan karena
+// ia satu-satunya endpoint tanpa sesi yang menyentuh database.
+const writeLimit = rateLimit({
+  max: 60,
+  windowMs: 60_000,
+  key: perUserOrIp,
+  message: 'Terlalu banyak permintaan. Tunggu sebentar, lalu coba lagi.',
+});
+const healthLimit = rateLimit({
+  max: 30,
+  windowMs: 60_000,
+  key: perIp,
+  message: 'Terlalu sering. Coba lagi sebentar.',
+});
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 
 app.disable('x-powered-by');
+// Satu hop: LiteSpeed di depan proses Node. Tanpa ini req.ip berisi alamat
+// proxy untuk SEMUA permintaan, sehingga batas per-IP di bawah akan mengunci
+// seluruh pengguna sekaligus alih-alih pemanggil yang berlebihan saja.
+app.set('trust proxy', 1);
 app.use(securityHeaders);
 app.use(express.json({ limit: '256kb' }));
 app.use(cookieParser(env.sessionSecret));
 
-app.get('/api/health', async (_req, res) => {
+// Semua permintaan yang MENGUBAH data, dihitung per pengguna. Dipasang di satu
+// tempat, bukan di tiap router, supaya rute baru ikut terlindungi tanpa perlu
+// diingat — sejalan dengan aturan bahwa endpoint baru gampang lupa didaftarkan.
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    next();
+    return;
+  }
+  writeLimit(req, res, next);
+});
+
+app.get('/api/health', healthLimit, async (_req, res) => {
   const info = await assertDatabaseReachable();
   res.json({ ok: true, database: info.name, mysql: info.version });
 });
