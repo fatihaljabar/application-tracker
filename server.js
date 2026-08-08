@@ -15,7 +15,22 @@
 // `??=` supaya masih bisa ditimpa, misalnya NODE_ENV=development saat menguji.
 process.env.NODE_ENV ??= 'production';
 
-// Impor dinamis, bukan `import` biasa: pernyataan import statis diangkat ke atas
-// berkas dan akan dijalankan SEBELUM baris di atas, sehingga NODE_ENV belum
-// sempat terpasang saat server membaca kebijakan keamanannya.
-await import('./server/index.ts');
+// Impor dinamis TANPA `await`, dan dua-duanya disengaja.
+//
+// Dinamis: pernyataan `import` statis diangkat ke atas berkas dan akan berjalan
+// SEBELUM baris NODE_ENV di atas, sehingga server membaca kebijakan keamanannya
+// saat variabel itu belum terpasang.
+//
+// Tanpa `await`: LiteSpeed di Hostinger memuat berkas entry ini dengan
+// `require()`, dan `require()` menolak graf ESM yang memakai await di tingkat
+// modul — `ERR_REQUIRE_ASYNC_MODULE`. server/index.ts memang memakainya (ia
+// menunggu database sebelum membuka port), jadi graf itu harus tetap berada di
+// balik import() yang tidak ditunggu, bukan di jalur require().
+//
+// Konsekuensinya kegagalan saat start jadi promise yang ditolak, bukan lemparan
+// biasa. Ditangkap di sini supaya tetap terlihat dan prosesnya benar-benar mati,
+// bukan menggantung dalam keadaan setengah hidup.
+import('./server/index.ts').catch((e) => {
+  console.error('[server] gagal memulai:', e);
+  process.exit(1);
+});
