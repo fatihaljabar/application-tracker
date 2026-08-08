@@ -19,6 +19,28 @@ interface TokenInfo {
 }
 
 /**
+ * Menolak token yang jelas bukan untuk kita SEBELUM memanggil Google.
+ *
+ * Tanpa ini, `{"credential":"x"}` pun memicu permintaan keluar berbatas 8 detik
+ * — jalur termahal di aplikasi ini, dan bisa dipicu tanpa sesi.
+ *
+ * BUKAN pemeriksaan keamanan. Isi payload di sini dibaca TANPA memverifikasi
+ * tanda tangan, jadi siapa pun bisa mengarang `aud` yang benar. Yang menentukan
+ * sah atau tidak tetap tokeninfo, dan `aud` diperiksa ULANG di bawah dari
+ * jawaban Google. Fungsi ini cuma membuang sampah lebih awal.
+ */
+function berbentukTokenUntukKita(credential: string): boolean {
+  const bagian = credential.split('.');
+  if (bagian.length !== 3) return false;
+  try {
+    const payload = JSON.parse(Buffer.from(bagian[1], 'base64url').toString('utf8'));
+    return payload?.aud === env.googleClientId;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Verifikasi ID token Google.
  *
  * Endpoint tokeninfo memeriksa tanda tangan token; ia TIDAK memeriksa bahwa
@@ -32,6 +54,9 @@ interface TokenInfo {
  */
 export async function verifyGoogleIdToken(credential: string): Promise<GoogleProfile> {
   if (!credential || credential.length > 4096) {
+    throw new ApiError(400, 'bad_credential', 'Token Google tidak sah.');
+  }
+  if (!berbentukTokenUntukKita(credential)) {
     throw new ApiError(400, 'bad_credential', 'Token Google tidak sah.');
   }
 
