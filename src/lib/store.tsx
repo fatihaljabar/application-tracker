@@ -157,6 +157,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const lang = db.settings.language;
   const t = useCallback((key: string) => translate(lang, key), [lang]);
 
+  // Judul tab dan atribut lang ikut bahasa pilihan pengguna (PRD § 9: cakupan
+  // dua bahasa penuh, tanpa teks yang tertinggal). index.html hanya memuat
+  // nilai Indonesia sebagai bawaan sebelum React hidup.
+  // `lang` juga menentukan pelafalan pembaca layar, jadi ini sekaligus
+  // aksesibilitas — bukan cuma teks di tab.
+  useEffect(() => {
+    document.title = translate(lang, 'docTitle');
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((x) => x.id !== id));
     window.clearTimeout(timers.current[id]);

@@ -2,6 +2,8 @@ type Dict = Record<string, string>;
 
 const id: Dict = {
   appName: 'Tracking Lamaran',
+  /** Judul tab peramban. Nilai awalnya juga ada di index.html, dipakai sebelum React hidup. */
+  docTitle: 'Tracking Lamaran — Pelacak Lamaran Kerja',
   tagline: 'Kelola perjalanan karier dengan tenang',
   // nav
   'nav.dashboard': 'Dasbor',
@@ -291,6 +293,7 @@ const id: Dict = {
 
 const en: Dict = {
   appName: 'Job Tracker',
+  docTitle: 'Job Tracker — Track Every Job Application',
   tagline: 'Manage your career journey calmly',
   'nav.dashboard': 'Dashboard',
   'nav.applications': 'Applications',
