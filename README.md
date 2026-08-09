@@ -1,4 +1,4 @@
-# Lacak Lamaran
+# Tracking Lamaran
 
 A job application tracker for Indonesian job seekers. Free, no ads, self-hosted.
 

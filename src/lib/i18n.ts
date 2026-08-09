@@ -1,7 +1,7 @@
 type Dict = Record<string, string>;
 
 const id: Dict = {
-  appName: 'Lacak Lamaran',
+  appName: 'Tracking Lamaran',
   tagline: 'Kelola perjalanan karier dengan tenang',
   // nav
   'nav.dashboard': 'Dasbor',
@@ -282,7 +282,7 @@ const id: Dict = {
   'l.serverDown': 'Server tidak merespons. Pastikan server berjalan, lalu coba lagi.',
   'l.signingIn': 'Sedang masuk…',
   'l.choose': 'Pilih akun',
-  'l.chooseDesc': 'untuk melanjutkan ke Lacak Lamaran',
+  'l.chooseDesc': 'untuk melanjutkan ke Tracking Lamaran',
   'l.signedIn': 'Berhasil masuk',
   'l.f1': 'Pipeline kanban',
   'l.f2': 'Pengingat & kalender',
@@ -290,7 +290,7 @@ const id: Dict = {
 };
 
 const en: Dict = {
-  appName: 'Job Tracker',
+  appName: 'Tracking Lamaran',
   tagline: 'Manage your career journey calmly',
   'nav.dashboard': 'Dashboard',
   'nav.applications': 'Applications',
@@ -554,7 +554,7 @@ const en: Dict = {
   'l.serverDown': 'The server is not responding. Make sure it is running, then try again.',
   'l.signingIn': 'Signing in…',
   'l.choose': 'Choose an account',
-  'l.chooseDesc': 'to continue to Job Tracker',
+  'l.chooseDesc': 'to continue to Tracking Lamaran',
   'l.signedIn': 'Signed in successfully',
   'l.f1': 'Kanban pipeline',
   'l.f2': 'Reminders & calendar',
