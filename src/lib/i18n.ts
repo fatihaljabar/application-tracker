@@ -290,7 +290,7 @@ const id: Dict = {
 };
 
 const en: Dict = {
-  appName: 'Tracking Lamaran',
+  appName: 'Job Tracker',
   tagline: 'Manage your career journey calmly',
   'nav.dashboard': 'Dashboard',
   'nav.applications': 'Applications',
@@ -554,7 +554,7 @@ const en: Dict = {
   'l.serverDown': 'The server is not responding. Make sure it is running, then try again.',
   'l.signingIn': 'Signing in…',
   'l.choose': 'Choose an account',
-  'l.chooseDesc': 'to continue to Tracking Lamaran',
+  'l.chooseDesc': 'to continue to Job Tracker',
   'l.signedIn': 'Signed in successfully',
   'l.f1': 'Kanban pipeline',
   'l.f2': 'Reminders & calendar',

@@ -111,9 +111,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-[var(--line)] bg-[var(--surface)] lg:flex">
         <div className="flex items-center gap-2.5 px-6 py-6">
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[var(--accent)]">
-            <img src="/icon.png" alt="" className="h-[19px] w-[19px] invert mix-blend-screen" />
-          </span>
+          <img src="/logo.png" alt="" className="h-8 w-8 rounded-[10px]" />
           <span className="text-[14.5px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
             {t('appName')}
           </span>
@@ -167,9 +165,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Icon name="fi-rr-menu-burger" className="text-[13px]" />
         </button>
         <span className="flex items-center gap-2 text-[14px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--accent)]">
-            <img src="/icon.png" alt="" className="h-4 w-4 invert mix-blend-screen" />
-          </span>
+          <img src="/logo.png" alt="" className="h-7 w-7 rounded-lg" />
           {t('appName')}
         </span>
         <button type="button"
