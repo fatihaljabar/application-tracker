@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kebijakan Privasi — Lacak Lamaran</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Berkas statis, sengaja tidak memakai React: halaman ini harus bisa dibuka
+         tanpa masuk, dan tidak boleh ikut rusak kalau aplikasinya bermasalah.
+         Warna dan huruf disalin dari src/index.css supaya terlihat satu keluarga. */
+      :root {
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --line: #e6e3dd;
+        --ink: #23211d;
+        --ink-soft: #57534a;
+        --ink-muted: #8d887d;
+        --accent: #2f6f5e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16171a;
+          --surface: #1e2024;
+          --line: #2e3137;
+          --ink: #eceae5;
+          --ink-soft: #b6b2aa;
+          --ink-muted: #8d887d;
+          --accent: #6aa892;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -0.03em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        letter-spacing: -0.015em;
+        margin: 40px 0 10px;
+      }
+      p, li { color: var(--ink-soft); }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 6px; }
+      strong { color: var(--ink); font-weight: 600; }
+      a { color: var(--accent); }
+      .tanggal { color: var(--ink-muted); font-size: 13px; margin: 0 0 32px; }
+      .kotak {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin: 24px 0;
+      }
+      .kotak p:first-child { margin-top: 0; }
+      .kotak p:last-child { margin-bottom: 0; }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Kebijakan Privasi</h1>
+      <p class="tanggal">Lacak Lamaran · berlaku 8 Agustus 2026</p>
+
+      <p>
+        Aplikasi ini menyimpan daftar lamaran kerja Anda. Isinya sering sensitif — perusahaan
+        yang Anda lamar bisa jadi rahasia dari atasan Anda sekarang. Halaman ini menjelaskan
+        apa yang disimpan, siapa yang bisa melihatnya, dan apa yang tidak dilakukan.
+      </p>
+
+      <h2>Data yang disimpan</h2>
+      <p>Dari akun Google Anda, saat pertama masuk:</p>
+      <ul>
+        <li>Nama dan alamat email</li>
+        <li>Alamat foto profil</li>
+        <li>Pengenal akun Google Anda</li>
+        <li>Waktu pendaftaran dan waktu terakhir membuka aplikasi</li>
+      </ul>
+      <p>
+        <strong>Kata sandi Google Anda tidak pernah melewati aplikasi ini.</strong> Proses
+        masuk ditangani Google, dan yang diterima aplikasi hanya keterangan di atas.
+      </p>
+      <p>Selain itu, semua yang Anda ketik sendiri:</p>
+      <ul>
+        <li>Lamaran — perusahaan, posisi, lokasi, gaji, tautan, tanggal, catatan, tag</li>
+        <li>Kontak recruiter yang Anda isi</li>
+        <li>Aktivitas, pengingat, catatan interview, bookmark, wishlist</li>
+        <li>Pengaturan aplikasi Anda</li>
+      </ul>
+
+      <h2>Siapa yang bisa melihat</h2>
+      <div class="kotak">
+        <p>
+          <strong>Pengguna lain tidak bisa melihat data Anda.</strong> Setiap permintaan ke
+          server disaring berdasarkan sesi Anda, dan aturan itu dijaga oleh pengujian otomatis
+          yang mencoba mengakses data pengguna lain di setiap jalur dan memastikan semuanya
+          ditolak.
+        </p>
+        <p>
+          <strong>Pengelola aplikasi ini bisa.</strong> Aplikasi dijalankan sendiri oleh satu
+          orang, dan ia punya akses ke basis datanya — sebagaimana pemilik server mana pun.
+          Data Anda tidak dibaca untuk keperluan apa pun selain menjalankan dan memperbaiki
+          layanan, dan tidak pernah dijual atau dibagikan.
+        </p>
+      </div>
+
+      <h2>Cookie</h2>
+      <p>
+        Satu cookie, bernama <code>sid</code>, berisi penanda sesi bertanda tangan. Gunanya
+        hanya supaya Anda tetap masuk. Berlaku 30 hari, tidak bisa dibaca JavaScript, dan
+        <strong>tidak dipakai untuk melacak Anda</strong> di situs mana pun.
+      </p>
+      <p>Tidak ada cookie iklan, tidak ada cookie analitik.</p>
+
+      <h2>Pihak ketiga</h2>
+      <p>
+        Tidak ada layanan analitik, tidak ada pelacak, tidak ada iklan. Yang berikut ini
+        menerima alamat IP Anda karena peramban Anda memuat berkas dari sana:
+      </p>
+      <ul>
+        <li><strong>Google</strong> — proses masuk, dan huruf dari Google Fonts</li>
+        <li><strong>Flaticon</strong> — ikon</li>
+        <li><strong>Hostinger</strong> — tempat aplikasi dan basis datanya dijalankan</li>
+      </ul>
+
+      <h2>Menghapus data Anda</h2>
+      <p>
+        Tombol hapus akun belum tersedia di aplikasi. Sampai ada, kirim permintaan lewat
+        kontak di bawah dari alamat email yang Anda pakai masuk, dan seluruh data Anda akan
+        dihapus.
+      </p>
+
+      <h2>Perubahan halaman ini</h2>
+      <p>
+        Kalau kebijakan ini berubah, tanggal di atas ikut berubah. Aplikasi ini masih
+        berkembang; fitur baru yang mengubah data yang disimpan akan tercermin di sini.
+      </p>
+
+      <h2>Kontak</h2>
+      <p>
+        <!-- GANTI dengan alamat email sungguhan sebelum halaman ini dibagikan. -->
+        <strong>[alamat email belum diisi]</strong>
+      </p>
+
+      <footer>
+        Kode sumber aplikasi ini terbuka:
+        <a href="https://github.com/fatihaljabar/application-tracker">github.com/fatihaljabar/application-tracker</a>
+        · <a href="/">kembali ke aplikasi</a>
+      </footer>
+    </main>
+  </body>
+</html>
