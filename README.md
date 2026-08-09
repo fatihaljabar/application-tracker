@@ -80,3 +80,9 @@ The contents of this app are a list of the companies someone is applying to, oft
 still employed elsewhere. It is treated as sensitive personal data: no user can see
 another user's data, only name, email and profile picture are requested from Google, and
 there are no third-party trackers or analytics.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Use it, change it, host your own.
+
+Privacy policy for the hosted instance: [/privasi.html](https://trackinglamaran.site/privasi.html)
