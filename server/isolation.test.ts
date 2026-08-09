@@ -8,6 +8,7 @@ import type { DB } from '../shared/types.ts';
 import { db } from './db/client.ts';
 import { documents, settings, users } from './db/schema.ts';
 import { env } from './lib/env.ts';
+import { r2Configured } from './lib/r2.ts';
 
 /**
  * Satu-satunya tes wajib di proyek ini (TECHNICAL.md § 10.4).
@@ -53,6 +54,10 @@ const ENDPOINTS: [method: string, path: string][] = [
   ['DELETE', `/activities/${randomUUID()}`],
   ['PUT', `/reminders/${randomUUID()}`],
   ['DELETE', `/reminders/${randomUUID()}`],
+  ['POST', '/documents/upload-url'],
+  ['POST', `/documents/${randomUUID()}/confirm`],
+  ['GET', `/documents/${randomUUID()}/download`],
+  ['DELETE', `/documents/${randomUUID()}`],
   ['PUT', `/notes/${randomUUID()}`],
   ['DELETE', `/notes/${randomUUID()}`],
   ['PUT', `/bookmarks/${randomUUID()}`],
@@ -195,8 +200,10 @@ describe('isolasi data antar pengguna', () => {
     await createUser(userA);
     await createUser(userB);
 
-    // Dokumen belum punya endpoint (M2), jadi barisnya ditulis langsung —
-    // jalur penautannya sudah ada di POST/PUT /applications dan harus diuji.
+    // Baris dokumen ditulis langsung, bukan lewat POST /documents/upload-url:
+    // endpoint itu menandatangani URL R2, dan kredensial R2 tidak selalu ada di
+    // lingkungan pengembangan. Isolasinya sendiri tidak bergantung pada R2 —
+    // kepemilikan diperiksa sebelum penyimpanan disentuh.
     await db.insert(documents).values({
       id: owned.doc,
       userId: userA.id,
@@ -393,6 +400,52 @@ describe('isolasi data antar pengguna', () => {
     assert.equal((await call(userB.cookie, 'DELETE', `/reminders/${owned.reminder}`)).status, 404);
   });
 
+  it('B tidak bisa mengunduh, mengonfirmasi, atau menghapus dokumen A', async () => {
+    // Ini kasus terpenting di berkas ini: dokumen berisi CV, dan satu kebocoran
+    // di sini berarti berkas pribadi orang bisa diunduh orang lain.
+    // Ketiganya memeriksa kepemilikan SEBELUM menyentuh R2, jadi hasilnya tidak
+    // bergantung pada ada tidaknya kredensial penyimpanan.
+    assert.equal((await call(userB.cookie, 'GET', `/documents/${owned.doc}/download`)).status, 404);
+    assert.equal((await call(userB.cookie, 'POST', `/documents/${owned.doc}/confirm`)).status, 404);
+    assert.equal((await call(userB.cookie, 'DELETE', `/documents/${owned.doc}`)).status, 404);
+
+    // Dan dokumen A masih utuh sesudahnya.
+    const a = await stateOf(userA.cookie);
+    assert.equal(a.body.docs.length, 1, 'dokumen A hilang setelah percobaan B');
+  });
+
+  it('kuota dan tipe berkas ditolak di server, bukan cuma di layar', async () => {
+    // Halaman Dokumen sudah menolak berkas >2 MB, tapi itu bisa dilewati dengan
+    // devtools. Yang mengikat adalah pemeriksaan di sini.
+    const meta = {
+      name: 'cv.pdf',
+      label: 'CV',
+      group: 'CV Utama',
+      category: 'cv',
+      mime: 'application/pdf',
+    };
+
+    const tooBig = await call<{ error: { code: string } }>(
+      userA.cookie,
+      'POST',
+      '/documents/upload-url',
+      { ...meta, size: 3 * 1024 * 1024 },
+    );
+    assert.equal(tooBig.status, 413);
+    assert.equal(tooBig.body.error.code, 'file_too_large');
+
+    const badType = await call<{ error: { code: string } }>(
+      userA.cookie,
+      'POST',
+      '/documents/upload-url',
+      { ...meta, mime: 'text/html', size: 1024 },
+    );
+    assert.equal(badType.status, 400, 'berkas HTML diterima sebagai dokumen');
+
+    // Keduanya ditolak sebelum baris apa pun dibuat.
+    assert.equal((await stateOf(userA.cookie)).body.docs.length, 1);
+  });
+
   it('B tidak bisa menimpa atau menghapus catatan interview A', async () => {
     assert.equal(
       (
@@ -517,6 +570,22 @@ describe('isolasi data antar pengguna', () => {
         })
       ).status,
       200,
+    );
+
+    // Dokumen dipisah karena dua endpointnya menyentuh R2 setelah kepemilikan
+    // lolos. Tanpa kredensial, 503 justru bukti yang kita cari: rutenya hidup
+    // dan pemeriksaan kepemilikan DILEWATI — sebuah 404 di sini akan berarti
+    // pemiliknya sendiri ikut ditolak.
+    const expected = r2Configured ? [302, 200] : [503, 503];
+    const download = await fetch(`${base}/documents/${owned.doc}/download`, {
+      headers: { cookie: userA.cookie },
+      redirect: 'manual',
+    });
+    assert.equal(download.status, expected[0], 'A tidak bisa mengunduh dokumennya sendiri');
+    assert.equal(
+      (await call(userA.cookie, 'DELETE', `/documents/${owned.doc}`)).status,
+      expected[1],
+      'A tidak bisa menghapus dokumennya sendiri',
     );
 
     for (const [method, path] of [
