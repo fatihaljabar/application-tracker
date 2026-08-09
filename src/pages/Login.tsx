@@ -89,8 +89,8 @@ export default function Login() {
       <div className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-14 px-6 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:px-10">
         <div className="anim-fade-up">
           <div className="inline-flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)] text-white">
-              <Icon name="fi-rr-briefcase" className="text-[14px]" />
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)]">
+              <img src="/icon.png" alt="" className="h-[21px] w-[21px] invert mix-blend-screen" />
             </span>
             <span className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
               {t('appName')}
