@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { assertDatabaseReachable } from './db/client.ts';
+import { startScheduler } from './jobs/scheduler.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
 import { perIp, perUserOrIp, rateLimit } from './lib/ratelimit.ts';
@@ -132,4 +133,7 @@ app.listen(env.port, () => {
   if (!existsSync(distDir)) {
     console.log('dist/ belum ada — jalankan "npm run dev" untuk frontend, atau "npm run build"');
   }
+  // Setelah port terangkat, bukan sebelumnya: tugas terjadwal tidak boleh
+  // menunda saat aplikasi mulai melayani permintaan.
+  startScheduler();
 });
