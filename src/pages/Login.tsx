@@ -172,6 +172,17 @@ export default function Login() {
           <p className="mt-7 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
             {t('l.local')}
           </p>
+          {/* Ukuran, warna, dan perataan sengaja sama persis dengan baris di atasnya —
+              ini keterangan, bukan ajakan, jadi tidak boleh menarik perhatian dari
+              tombol masuk. Berkas statis di public/, bisa dibuka tanpa sesi. */}
+          <p className="mt-2 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
+            <a
+              href="/privasi.html"
+              className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
+            >
+              {t('l.privacy')}
+            </a>
+          </p>
         </div>
       </div>
     </div>
