@@ -22,7 +22,7 @@ import type {
   Tag,
   UserProfile,
 } from '@shared/types';
-import { ApiError, api, del, patch, post, put } from './api';
+import { ApiError, api, del, patch, post, put, uploadFile } from './api';
 import { translate } from './i18n';
 import { initials, uid } from './utils';
 
@@ -113,8 +113,15 @@ interface Ctx {
   deleteReminder: (id: string) => void;
   toggleReminder: (id: string) => void;
   // docs
-  addDoc: (d: Omit<DocFile, 'id'>) => void;
+  /** Mengembalikan true bila berkas benar-benar sampai. Form menunggu ini. */
+  addDoc: (d: Omit<DocFile, 'id'>, done?: string) => Promise<boolean>;
   deleteDoc: (id: string) => void;
+  /**
+   * Persen unggahan yang sedang berjalan, null bila tidak ada (Lampiran A, A3).
+   * Ada di store, bukan di halaman, karena unggahannya sendiri dikerjakan di
+   * sini — halaman cuma menampilkannya.
+   */
+  uploadPercent: number | null;
   // notes
   saveNote: (n: InterviewNote, done?: string) => Promise<boolean>;
   deleteNote: (id: string) => void;
@@ -143,6 +150,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<Alert | null>(null);
   const [inFlight, setInFlight] = useState(0);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Record<string, number>>({});
   const dbRef = useRef(db);
@@ -319,6 +327,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       db,
       loading,
       saving: inFlight > 0,
+      uploadPercent,
       alert,
       dismissAlert,
       t,
@@ -573,13 +582,68 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
       },
 
-      // Unggahan dokumen baru tersedia di M2; sampai saat itu tidak ada
-      // endpoint yang bisa dipanggil, jadi jangan berpura-pura berhasil.
-      addDoc: (_doc) => {
-        toast('Unggah dokumen belum tersedia.', 'info');
+      /**
+       * Unggahan tiga langkah (TECHNICAL.md § 8): minta URL bertanda tangan,
+       * PUT berkasnya langsung ke penyimpanan, lalu konfirmasi.
+       *
+       * Berkasnya tidak pernah lewat server kita. Karena itu langkah tengahnya
+       * memakai uploadFile(), bukan api() — tujuannya bukan domain kita.
+       *
+       * Kalau langkah tengah gagal, baris `pending` di server tertinggal.
+       * Itu disengaja dan sudah ditangani: penyapu harian membuangnya beserta
+       * objeknya. Mencoba membersihkan dari sini justru menambah satu panggilan
+       * yang bisa ikut gagal.
+       */
+      addDoc: async (doc, done) => {
+        setUploadPercent(0);
+        try {
+          return await run(
+            async () => {
+              const { id, uploadUrl } = await post<{ id: string; uploadUrl: string }>(
+                '/documents/upload-url',
+                {
+                  name: doc.name,
+                  label: doc.label,
+                  group: doc.group,
+                  category: doc.category,
+                  language: doc.language,
+                  version: doc.version,
+                  size: doc.size,
+                  mime: doc.mime,
+                  note: doc.note,
+                },
+              );
+              // dataUrl dari FileReader dikembalikan jadi Blob. Bukan jalur
+              // tercepat, tapi halaman Dokumen sudah membacanya begitu dan
+              // desainnya terkunci — 2 MB tidak sepadan dengan mengubah layar.
+              const blob = await (await fetch(doc.dataUrl as string)).blob();
+              await uploadFile(uploadUrl, blob, setUploadPercent);
+              return await post<DocFile>(`/documents/${id}/confirm`);
+            },
+            (d, saved) => ({ ...d, docs: [saved, ...d.docs] }),
+            done,
+          );
+        } finally {
+          setUploadPercent(null);
+        }
       },
-      deleteDoc: (_id) => {
-        toast('Unggah dokumen belum tersedia.', 'info');
+
+      deleteDoc: (id) => {
+        void run(
+          () => del(`/documents/${id}`),
+          // Server melepas dokumen dari semua lamaran lewat cascade, jadi
+          // tampilan harus ikut melepasnya — kalau tidak, kartu lamaran masih
+          // menghitung lampiran yang sudah tidak ada sampai halaman dimuat ulang.
+          (d) => ({
+            ...d,
+            docs: d.docs.filter((x) => x.id !== id),
+            apps: d.apps.map((a) =>
+              a.documentIds.includes(id)
+                ? { ...a, documentIds: a.documentIds.filter((x) => x !== id) }
+                : a,
+            ),
+          }),
+        );
       },
 
       saveNote: (n, done) => {
@@ -705,7 +769,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
       },
     };
-  }, [db, loading, inFlight, alert, dismissAlert, t, lang, toasts, toast, dismissToast, run, loadState]);
+  }, [
+    db,
+    loading,
+    inFlight,
+    uploadPercent,
+    alert,
+    dismissAlert,
+    t,
+    lang,
+    toasts,
+    toast,
+    dismissToast,
+    run,
+    loadState,
+  ]);
 
   // Jangan render apa pun sebelum sesi diketahui: tanpa ini halaman masuk
   // berkelip sesaat sebelum dashboard muncul.
