@@ -111,6 +111,28 @@ export async function sendDailyDigests(): Promise<number> {
       .orderBy(asc(reminders.datetime))
       .limit(20);
 
+    /**
+     * Yang sudah lewat dan belum ditandai selesai.
+     *
+     * Tanpa bagian ini, pengingat yang terlewat sehari HILANG dari email
+     * selamanya — orang yang lupa menandainya tidak pernah diingatkan lagi.
+     * Dibatasi tujuh hari ke belakang supaya rangkuman tidak berubah jadi
+     * daftar penyesalan yang sama panjang tiap pagi.
+     */
+    const terlambat = await db
+      .select({ title: reminders.title, datetime: reminders.datetime })
+      .from(reminders)
+      .where(
+        and(
+          eq(reminders.userId, u.userId),
+          eq(reminders.done, false),
+          lt(reminders.datetime, mulai),
+          gte(reminders.datetime, new Date(+mulai - 7 * 24 * 3600 * 1000)),
+        ),
+      )
+      .orderBy(asc(reminders.datetime))
+      .limit(20);
+
     const deadline = await db
       .select({ company: applications.company, position: applications.position })
       .from(applications)
@@ -125,12 +147,22 @@ export async function sendDailyDigests(): Promise<number> {
 
     // Tidak ada yang perlu ditindak — hari ini dilewati, dan klaimnya tetap
     // dipegang supaya tidak dihitung ulang tiap jam.
-    if (agenda.length === 0 && deadline.length === 0) continue;
+    if (agenda.length === 0 && deadline.length === 0 && terlambat.length === 0) continue;
 
     const jam = (d: Date) =>
       new Intl.DateTimeFormat('id-ID', { timeStyle: 'short', timeZone: u.timezone }).format(d);
+    const tanggalJam = (d: Date) =>
+      new Intl.DateTimeFormat('id-ID', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: u.timezone,
+      }).format(d);
 
     const isi = [
+      // Yang terlambat ditaruh PALING ATAS: itu yang paling mudah terlewat lagi.
+      terlambat.length
+        ? `<p style="margin:0 0 8px;font-size:13px;color:#b06565">Terlambat</p><ul style="margin:0 0 20px;padding-left:18px">${terlambat.map((a) => baris(a.title, tanggalJam(new Date(a.datetime)))).join('')}</ul>`
+        : '',
       agenda.length
         ? `<p style="margin:0 0 8px;font-size:13px;color:#7c766c">Agenda hari ini</p><ul style="margin:0 0 20px;padding-left:18px">${agenda.map((a) => baris(a.title, `pukul ${jam(new Date(a.datetime))}`)).join('')}</ul>`
         : '',
@@ -141,7 +173,7 @@ export async function sendDailyDigests(): Promise<number> {
 
     const ok = await sendMail({
       to: u.email,
-      subject: `Agenda hari ini — ${agenda.length + deadline.length} hal`,
+      subject: `Agenda hari ini — ${terlambat.length + agenda.length + deadline.length} hal`,
       heading: `Selamat pagi, ${u.nama.split(/\s+/)[0] ?? ''}`.trim(),
       bodyHtml: isi,
       userId: u.userId,
