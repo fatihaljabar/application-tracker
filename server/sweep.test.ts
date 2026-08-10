@@ -27,42 +27,38 @@ const userId = randomUUID();
 
 const rows = {
   stale: randomUUID(),
+  justOver: randomUUID(),
+  justUnder: randomUUID(),
   recent: randomUUID(),
   readyOld: randomUUID(),
 };
 
 /**
- * Umur baris ditulis dengan jam MySQL (`NOW(3) - INTERVAL ? HOUR`), bukan jam
- * JavaScript — dan itu bukan detail gaya.
+ * Umur baris ditulis PERSIS SEPERTI APLIKASI MENULISNYA: objek Date lewat
+ * drizzle. Itu satu-satunya cara tes ini bisa menangkap salah kerangka waktu.
  *
- * Versi pertama tes ini memakai `new Date(Date.now() - 25 jam)` dan LULUS di
- * atas penyapu yang cacat: pool mengirim Date sebagai UTC sementara zona sesi
- * MySQL `SYSTEM`, jadi baris yang ditulis dan batas waktu yang dibandingkan
- * meleset sama besar dan saling meniadakan. Cacatnya baru terlihat ketika baris
- * gantung dibuat lewat jalur lain: penyapu ternyata baru bekerja setelah 31 jam.
- *
- * Menulis umur lewat MySQL membuat tes ini memihak kebenaran, bukan memihak
- * implementasinya.
+ * Riwayatnya layak dicatat, karena dua versi tes ini sempat salah dengan cara
+ * berlawanan. Versi kedua menyemai umur dengan `NOW(3) - INTERVAL ? HOUR` —
+ * jam LOKAL server — dan itu simetris dengan cutoff `NOW(3)` yang juga lokal,
+ * jadi keduanya saling meniadakan dan tes lulus di atas penyapu yang menyapu
+ * baris berumur 20 jam. Tes yang menyemai lewat jalur berbeda dari aplikasi
+ * tidak menguji aplikasinya, ia menguji dirinya sendiri.
  */
 async function insertDoc(id: string, state: 'pending' | 'ready', hoursAgo: number) {
-  await db.$client.query(
-    'INSERT INTO documents (id, user_id, object_key, name, label, `group`, category, size, mime, note, state, uploaded_at) ' +
-      'VALUES (?,?,?,?,?,?,?,?,?,?,?, NOW(3) - INTERVAL ? HOUR)',
-    [
-      id,
-      userId,
-      `docs/${userId}/${id}`,
-      'cv.pdf',
-      'CV',
-      'CV Utama',
-      'cv',
-      1024,
-      'application/pdf',
-      '',
-      state,
-      hoursAgo,
-    ],
-  );
+  await db.insert(documents).values({
+    id,
+    userId,
+    objectKey: `docs/${userId}/${id}`,
+    name: 'cv.pdf',
+    label: 'CV',
+    group: 'CV Utama',
+    category: 'cv',
+    size: 1024,
+    mime: 'application/pdf',
+    note: '',
+    state,
+    uploadedAt: new Date(Date.now() - hoursAgo * 3600 * 1000),
+  });
 }
 
 const idsLeft = async () => {
@@ -91,7 +87,11 @@ describe('sapu dokumen gantung', () => {
 
     // 25 jam: gantung, harus disapu. 1 jam: masih berjalan, harus selamat.
     // 25 jam tapi `ready`: berkas sungguhan yang lama, harus selamat.
+    // 20 jam: TEPAT kasus yang lolos dari cutoff berkerangka salah — di WIB
+    // sebuah cutoff NOW(3) berlaku pada 17 jam, jadi baris ini ikut tersapu.
     await insertDoc(rows.stale, 'pending', 25);
+    await insertDoc(rows.justOver, 'pending', 24.5);
+    await insertDoc(rows.justUnder, 'pending', 20);
     await insertDoc(rows.recent, 'pending', 1);
     await insertDoc(rows.readyOld, 'ready', 25);
   });
@@ -113,7 +113,14 @@ describe('sapu dokumen gantung', () => {
     // Menghapus baris tanpa bisa menghapus objeknya akan meninggalkan berkas
     // yatim di R2 begitu kredensialnya diisi nanti. Lebih baik tidak menyapu.
     assert.equal(await sweepPendingDocuments(), 0);
-    assert.equal((await idsLeft()).size, 3, 'baris terhapus padahal R2 tidak aktif');
+    // Dihitung dari `rows`, bukan angka tetap: angka tetap diam-diam jadi salah
+    // begitu ada baris uji baru, dan cabang ini di-skip saat R2 aktif sehingga
+    // kesalahannya tidak akan terlihat sampai dijalankan di lingkungan lain.
+    assert.equal(
+      (await idsLeft()).size,
+      Object.keys(rows).length,
+      'baris terhapus padahal R2 tidak aktif',
+    );
   });
 
   it('hanya membuang pending yang lewat 24 jam', async (t) => {
@@ -126,10 +133,23 @@ describe('sapu dokumen gantung', () => {
 
     const left = await idsLeft();
     assert.ok(!left.has(rows.stale), 'pending 25 jam tidak tersapu');
-    // Dua ini yang membuat tesnya bermakna.
+    assert.ok(
+      !left.has(rows.justOver),
+      'pending 24,5 jam tidak tersapu — ambangnya kelewat longgar',
+    );
+    // Tiga ini yang membuat tesnya bermakna: tanpa mereka, penyapu yang
+    // mengosongkan seluruh tabel juga akan lulus.
     assert.ok(
       left.has(rows.recent),
       'pending yang baru 1 jam ikut terhapus — batas waktunya salah',
+    );
+    // Penjaga kerangka waktu, dan inilah kasus yang lolos dari versi sebelumnya.
+    // Kolomnya berisi UTC; cutoff berbasis NOW() berada di waktu lokal server
+    // dan menggeser ambang sebesar offsetnya — di WIB baris ini tersapu pada
+    // 17 jam, tujuh jam terlalu cepat.
+    assert.ok(
+      left.has(rows.justUnder),
+      'pending 20 jam ikut terhapus — cutoff beda kerangka waktu dengan kolomnya',
     );
     assert.ok(left.has(rows.readyOld), 'dokumen READY ikut terhapus — ini kehilangan data');
   });
