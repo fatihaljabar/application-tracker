@@ -1,4 +1,5 @@
 import { sweepPendingDocuments } from './documents.ts';
+import { sendDueReminders } from './reminders.ts';
 
 /**
  * Penjadwal di dalam proses yang sama (TECHNICAL.md § 9). Jadwalnya sesederhana
@@ -47,5 +48,8 @@ export function startScheduler() {
     setInterval(() => void run(name, task), everyMs).unref();
   };
 
+  // Tiap 5 menit. Toleransi PRD § 3 adalah ±15 menit, jadi interval ini
+  // menyisakan ruang untuk satu putaran terlewat tanpa melanggar janjinya.
+  schedule('kirim pengingat', sendDueReminders, 5 * 60_000);
   schedule('sapu dokumen gantung', sweepPendingDocuments, DAY_MS);
 }
