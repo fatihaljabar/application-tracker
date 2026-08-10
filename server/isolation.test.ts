@@ -69,6 +69,12 @@ const ENDPOINTS: [method: string, path: string][] = [
   ['PUT', '/settings'],
 ];
 
+/**
+ * Sengaja TIDAK ada di ENDPOINTS: `/unsubscribe` memang tanpa sesi (PRD § 6.13).
+ * Penjaganya tanda tangan HMAC, dan itu diuji tersendiri di unsubscribe.test.ts
+ * beserta kasus "tanda tangan pengguna lain ditolak".
+ */
+
 /** Tabel yang punya kolom user_id — dipakai untuk membuktikan data uji bersih. */
 const OWNED_TABLES = [
   'settings',
