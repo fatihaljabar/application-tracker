@@ -57,6 +57,14 @@ export function securityHeaders(_req: Request, res: Response, next: NextFunction
     ].join('; '),
   );
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Pasangan dari `frame-ancestors 'none'` di atas.
+  //
+  // Bukan pengulangan yang sia-sia: CSP dari header DIGANTI LiteSpeed di
+  // hosting ini, jadi salinan CSP yang berlaku sesungguhnya ada di <meta> pada
+  // index.html — dan `frame-ancestors` adalah satu-satunya arahan yang
+  // DIABAIKAN peramban bila datang dari meta. Tanpa baris ini, satu-satunya
+  // penjaga terhadap clickjacking hilang di produksi.
+  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
   if (env.isProduction) {
