@@ -10,10 +10,29 @@ export default function Login() {
   const slot = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
 
+  /**
+   * Pustaka Google disiapkan SEKALI, dan itu sebabnya callback-nya diambil
+   * lewat ref alih-alih jadi dependensi efek.
+   *
+   * Sebelumnya efeknya bergantung pada [signIn, toast, t]. `signIn` lahir dari
+   * useMemo besar di store yang dibuat ulang setiap kali data, keadaan simpan,
+   * atau status koneksi berubah — jadi efeknya berjalan berulang kali dan
+   * memanggil `google.accounts.id.initialize()` berkali-kali. Google sendiri
+   * yang memberi tahu, lewat peringatan di konsol: "called multiple times.
+   * This could cause unexpected behavior and only the last initialized
+   * instance will be used."
+   *
+   * Ref tidak reaktif, jadi efeknya tidak perlu berjalan ulang hanya untuk
+   * memakai fungsi versi terbaru.
+   */
+  const terbaru = useRef({ signIn, toast, t });
+  terbaru.current = { signIn, toast, t };
+
   useEffect(() => {
     let cancelled = false;
 
     const signInWith = async (credential: string) => {
+      const { signIn, toast, t } = terbaru.current;
       if (busyRef.current) return;
       busyRef.current = true;
       setBusy(true);
@@ -68,12 +87,15 @@ export default function Login() {
         // Google tetap klik pengguna yang asli.
         id.renderButton(slot.current, { type: 'standard', width: 320 });
       })
-      .catch(() => toast(t('l.signInFailed'), 'error'));
+      .catch(() => terbaru.current.toast(terbaru.current.t('l.signInFailed'), 'error'));
 
     return () => {
       cancelled = true;
     };
-  }, [signIn, toast, t]);
+    // Sengaja kosong: seluruh callback diambil dari ref di atas, dan
+    // menyiapkan pustaka Google lebih dari sekali justru yang diperbaiki di
+    // sini. Lihat komentar pada `terbaru`.
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--bg)]">
