@@ -27,6 +27,22 @@ export class ApiError extends Error {
   get isConflict() {
     return this.status === 409;
   }
+
+  /**
+   * Server tidak terjangkau — bukan sekadar permintaan yang ditolak.
+   *
+   * Dua bentuk, dan keduanya nyata:
+   * - `status 0`: fetch gagal total, tidak ada balasan. Ini bentuknya di
+   *   produksi, tempat Express melayani halaman dan API sekaligus.
+   * - `5xx tanpa bentuk galat kita`: ada yang menjawab, tapi bukan aplikasi
+   *   ini. Di pengembangan itu proxy Vite saat backend mati; di produksi bisa
+   *   gerbang di depan Node. Kode `error` berarti tidak ada `{ error: { … } }`
+   *   di badan balasan — aplikasi kita SELALU mengirimnya, jadi 500 dari kita
+   *   sendiri (kode `internal`) sengaja tidak ikut: itu bug, bukan koneksi.
+   */
+  get isUnreachable() {
+    return this.status === 0 || (this.status >= 500 && this.code === 'error');
+  }
 }
 
 const OFFLINE = 'Tidak bisa menghubungi server. Periksa koneksi, lalu coba lagi.';

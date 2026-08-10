@@ -75,6 +75,7 @@ const id: Dict = {
   'c.deadlineSoon': 'Deadline terdekat',
   'c.favorite': 'Favorit',
   'c.results': 'hasil',
+  'c.offline': 'Tidak tersambung ke server',
   // fields
   'f.company': 'Nama perusahaan',
   'f.position': 'Posisi',
@@ -365,6 +366,7 @@ const en: Dict = {
   'c.deadlineSoon': 'Closest deadline',
   'c.favorite': 'Favorite',
   'c.results': 'results',
+  'c.offline': 'Not connected to the server',
   'f.company': 'Company name',
   'f.position': 'Position',
   'f.department': 'Department',

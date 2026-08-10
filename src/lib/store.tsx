@@ -86,6 +86,12 @@ interface Ctx {
    * supaya tidak terlihat menggantung dan tidak bisa ditekan dua kali.
    */
   saving: boolean;
+  /**
+   * Server terjangkau atau tidak (Lampiran A, A2). Toast kegagalan hilang
+   * setelah tiga detik; penanda ini menetap selama koneksinya masih putus,
+   * supaya pengguna tidak mengetik satu lamaran penuh baru tahu ada masalah.
+   */
+  online: boolean;
   alert: Alert | null;
   dismissAlert: () => void;
   t: (key: string) => string;
@@ -151,6 +157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [alert, setAlert] = useState<Alert | null>(null);
   const [inFlight, setInFlight] = useState(0);
   const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  const [online, setOnline] = useState(true);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Record<string, number>>({});
   const dbRef = useRef(db);
@@ -174,6 +181,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     document.title = translate(lang, 'docTitle');
     document.documentElement.lang = lang;
   }, [lang]);
+
+  /**
+   * Dua sumber putusnya koneksi, dan keduanya perlu:
+   *
+   * - Peristiwa `offline`/`online` peramban — cepat, tapi cuma tahu soal kartu
+   *   jaringan. Wi-Fi menyala sementara server mati tetap dianggap online.
+   * - Panggilan API yang tidak dijawab APLIKASI ini — lihat `isUnreachable` di
+   *   api.ts. Itu yang menangkap server mati, dan bentuknya berbeda antara
+   *   pengembangan (proxy Vite membalas 5xx) dan produksi (fetch gagal total).
+   */
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    setOnline(navigator.onLine);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  /**
+   * Pulih sendiri. Tanpa ini penandanya benar saat muncul tapi berbohong
+   * sesudahnya: server bisa hidup lagi tanpa pengguna menyentuh apa pun, dan
+   * penanda yang menetap salah lebih buruk daripada tidak ada penanda.
+   *
+   * `/api/health` menahan hasilnya sepuluh detik di server, jadi menyapa tiap
+   * sepuluh detik hanya menghasilkan satu query — dan enam permintaan per menit
+   * masih jauh di bawah batas laju 30.
+   */
+  useEffect(() => {
+    if (online) return;
+    const id = window.setInterval(() => {
+      fetch('/api/health')
+        .then((r) => {
+          if (r.ok) setOnline(true);
+        })
+        .catch(() => {
+          /* masih putus — biarkan penandanya */
+        });
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [online]);
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((x) => x.id !== id));
@@ -225,6 +276,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadState();
       } catch (e) {
         if (!alive) return;
+        // Muat pertama juga menentukan status koneksi. Tanpa baris ini penanda
+        // A2 tidak pernah muncul saat aplikasi dibuka dengan server mati —
+        // justru saat pengguna paling perlu tahu, karena belum ada satu pun
+        // mutasi yang bisa menandainya.
+        if (e instanceof ApiError && e.isUnreachable) setOnline(false);
         // 401 berarti memang belum masuk — tampilkan halaman masuk, bukan galat.
         // Selain itu server tidak terjangkau, dan menampilkan halaman masuk di
         // situ menyesatkan: pengguna sebenarnya masih login.
@@ -258,10 +314,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setInFlight((n) => n + 1);
       try {
         const result = await call();
+        // Balasan yang sampai adalah bukti terkuat bahwa server terjangkau.
+        setOnline(true);
         setDb((d) => apply(d, result));
         if (successMessage) toast(successMessage);
         return true;
       } catch (e) {
+        if (e instanceof ApiError && e.isUnreachable) setOnline(false);
         // Sesi habis dan konflik antar tab menghentikan pekerjaan pengguna,
         // jadi keduanya memakai dialog. Galat sementara cukup toast
         // (TECHNICAL.md § 6).
@@ -328,6 +387,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loading,
       saving: inFlight > 0,
       uploadPercent,
+      online,
       alert,
       dismissAlert,
       t,
@@ -774,6 +834,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loading,
     inFlight,
     uploadPercent,
+    online,
     alert,
     dismissAlert,
     t,

@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useStore } from '../lib/store';
-import { Icon } from './ui';
+import { Badge, Icon } from './ui';
 
 const toneMap = {
   success: { icon: 'fi-rr-check', color: 'var(--ok)' },
@@ -9,9 +9,26 @@ const toneMap = {
 };
 
 export default function Toaster() {
-  const { toasts, dismissToast } = useStore();
+  const { toasts, dismissToast, online, t: tr } = useStore();
   return createPortal(
-    <div className="pointer-events-none fixed bottom-5 right-1/2 z-[200] flex w-[min(92vw,360px)] translate-x-1/2 flex-col gap-2 sm:bottom-6 sm:right-6 sm:translate-x-0">
+    <div className="pointer-events-none fixed bottom-5 right-1/2 z-[200] flex w-[min(92vw,360px)] translate-x-1/2 flex-col items-center gap-2 sm:bottom-6 sm:right-6 sm:translate-x-0 sm:items-end">
+      {/* A2 — penanda koneksi terputus. Menetap selama masih putus, tidak
+          seperti toast yang hilang sendiri setelah tiga detik. Ikut di portal
+          ini karena portalnya sudah tampil di setiap halaman, jadi Layout tidak
+          perlu disentuh sama sekali. */}
+      {!online && (
+        <Badge
+          dot
+          color="var(--danger)"
+          className="anim-pop pointer-events-auto bg-[var(--surface)] shadow-[var(--shadow-soft)]"
+          // aria-live: pembaca layar mengumumkannya saat muncul, tanpa
+          // memindahkan fokus pengguna dari yang sedang dikerjakan.
+        >
+          <span role="status" aria-live="polite">
+            {tr('c.offline')}
+          </span>
+        </Badge>
+      )}
       {toasts.map((t) => {
         const tone = toneMap[t.tone];
         return (
