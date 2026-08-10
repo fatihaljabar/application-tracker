@@ -1,4 +1,6 @@
+import { sendDailyDigests } from './digest.ts';
 import { sweepPendingDocuments } from './documents.ts';
+import { createFollowupReminders } from './followup.ts';
 import { sendDueReminders } from './reminders.ts';
 
 /**
@@ -6,8 +8,8 @@ import { sendDueReminders } from './reminders.ts';
  * "tiap sekian jam", jadi tidak ada ekspresi cron yang perlu diurai dan tidak
  * ada pustaka penjadwal yang dipasang.
  *
- * Baru satu tugas terpasang: pembersih berkas gantung. Pengirim reminder dan
- * rangkuman harian menyusul bersama Resend.
+ * Empat tugas: pengirim reminder, rangkuman harian, pembersih berkas gantung,
+ * dan pembuat reminder follow-up otomatis.
  *
  * Tiap putaran dibungkus try/catch. Satu tugas yang gagal tidak boleh
  * menjatuhkan penjadwal, dan penjadwal yang jatuh tidak boleh menjatuhkan
@@ -51,5 +53,9 @@ export function startScheduler() {
   // Tiap 5 menit. Toleransi PRD § 3 adalah ±15 menit, jadi interval ini
   // menyisakan ruang untuk satu putaran terlewat tanpa melanggar janjinya.
   schedule('kirim pengingat', sendDueReminders, 5 * 60_000);
+  // Tiap jam: "pukul 07.00" terjadi 24 kali sehari di jam server yang berbeda,
+  // karena penggunanya berada di zona berbeda.
+  schedule('rangkuman harian', sendDailyDigests, 60 * 60_000);
   schedule('sapu dokumen gantung', sweepPendingDocuments, DAY_MS);
+  schedule('buat follow-up otomatis', createFollowupReminders, DAY_MS);
 }

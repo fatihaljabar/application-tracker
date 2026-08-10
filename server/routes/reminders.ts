@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '../db/client.ts';
 import { applications, reminders } from '../db/schema.ts';
+import { autoKeyFor, dismissFollowup } from '../jobs/followup.ts';
 import { ApiError } from '../lib/middleware.ts';
 import { requireAuth } from '../lib/session.ts';
 import { parse, reminderInput, uuid } from '../lib/validate.ts';
@@ -67,11 +68,23 @@ remindersRouter.delete('/:id', async (req, res) => {
   const userId = req.userId as string;
   const id = parse(uuid, req.params.id);
   const [row] = await db
-    .select({ id: reminders.id })
+    .select({
+      id: reminders.id,
+      autoKey: reminders.autoKey,
+      applicationId: reminders.applicationId,
+    })
     .from(reminders)
     .where(and(eq(reminders.id, id), eq(reminders.userId, userId)))
     .limit(1);
   if (!row) throw new ApiError(404, 'not_found', 'Reminder tidak ditemukan.');
+
+  // Menghapus reminder follow-up OTOMATIS berarti "jangan tawarkan lagi", bukan
+  // sekadar "hilangkan hari ini" (PRD § 6.6). Tanpa penanda ini tugas harian
+  // membuatnya lagi besok, karena keunikan auto_key ikut hilang bersama
+  // barisnya — dan pengguna akan merasa penghapusannya diabaikan.
+  if (row.applicationId && row.autoKey === autoKeyFor(row.applicationId)) {
+    await dismissFollowup(row.applicationId, userId);
+  }
 
   await db.delete(reminders).where(eq(reminders.id, id));
   res.json({ id, deleted: true });
