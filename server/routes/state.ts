@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { Router } from 'express';
 import type {
   Activity,
@@ -84,10 +84,12 @@ stateRouter.get('/', requireAuth, async (req, res) => {
       .from(reminders)
       .where(eq(reminders.userId, userId))
       .orderBy(asc(reminders.datetime)),
+    // Hanya yang 'ready'. Baris 'pending' adalah unggahan yang belum selesai —
+    // menampilkannya berarti memberi pengguna dokumen yang tidak bisa diunduh.
     db
       .select()
       .from(documents)
-      .where(eq(documents.userId, userId))
+      .where(and(eq(documents.userId, userId), eq(documents.state, 'ready')))
       .orderBy(desc(documents.uploadedAt)),
     db.select().from(interviewNotes).where(eq(interviewNotes.userId, userId)),
     db

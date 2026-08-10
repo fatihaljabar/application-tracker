@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   ACTIVITY_TYPE_VALUES,
+  DOC_CATEGORY_VALUES,
   JOB_TYPE_VALUES,
   PREP_STATUS_VALUES,
   REMINDER_TYPE_VALUES,
@@ -140,6 +141,35 @@ export const wishInput = z.object({
 export const tagInput = z.object({
   name: z.string().trim().min(1, 'Nama tag wajib diisi').max(64),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Warna harus berupa kode heksadesimal'),
+});
+
+/**
+ * Metadata dokumen. Isi berkasnya tidak lewat sini — hanya keterangannya,
+ * lalu peramban mengunggah langsung ke R2 (TECHNICAL.md § 8).
+ *
+ * Tipe berkas dibatasi sesuai PRD § 6.7. Daftar ini penjaga di sisi server;
+ * atribut accept pada input berkas cuma kenyamanan dan bisa dilewati.
+ */
+export const DOC_MIME_VALUES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/png',
+  'image/jpeg',
+] as const;
+
+export const documentInput = z.object({
+  name: z.string().trim().min(1, 'Nama berkas wajib diisi').max(255),
+  label: z.string().trim().min(1, 'Label wajib diisi').max(255),
+  group: z.string().trim().min(1, 'Grup wajib diisi').max(255),
+  category: z.enum(DOC_CATEGORY_VALUES),
+  language: z.enum(['id', 'en', '-']).default('-'),
+  version: z.string().trim().min(1).max(32).default('v1'),
+  // Angka dari klien dipakai untuk menolak lebih awal, bukan sebagai kebenaran:
+  // ukuran sebenarnya diperiksa ke R2 saat konfirmasi.
+  size: z.number().int().positive('Berkas kosong tidak bisa diunggah'),
+  mime: z.enum(DOC_MIME_VALUES, { message: 'Tipe berkas tidak didukung' }),
+  note: z.string().max(5000).default(''),
 });
 
 export const settingsInput = z.object({

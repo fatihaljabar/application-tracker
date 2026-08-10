@@ -103,6 +103,17 @@ export const DOC_CATEGORY_VALUES = [
 ] as const;
 export type DocCategory = (typeof DOC_CATEGORY_VALUES)[number];
 
+/**
+ * Batas dokumen dari PRD § 6.7. Ditaruh di shared karena server MEMAKSAKANNYA
+ * dan layar MENAMPILKANNYA — dua salinan angka yang sama suatu hari akan
+ * berbeda, dan yang terlihat pengguna jadi berbeda dari yang ditolak server.
+ *
+ * Yang mengikat tetap pemeriksaan di server; angka di layar cuma kenyamanan.
+ */
+export const DOC_MAX_FILE_BYTES = 2 * 1024 * 1024;
+export const DOC_MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+export const DOC_MAX_COUNT = 50;
+
 export interface DocFile {
   id: string;
   name: string;

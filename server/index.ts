@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { assertDatabaseReachable } from './db/client.ts';
+import { startScheduler } from './jobs/scheduler.ts';
+import { emailConfigured } from './lib/email.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
 import { perIp, perUserOrIp, rateLimit } from './lib/ratelimit.ts';
@@ -11,11 +13,13 @@ import { activitiesRouter } from './routes/activities.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
 import { bookmarksRouter } from './routes/bookmarks.ts';
+import { documentsRouter } from './routes/documents.ts';
 import { notesRouter } from './routes/notes.ts';
 import { remindersRouter } from './routes/reminders.ts';
 import { settingsRouter } from './routes/settings.ts';
 import { stateRouter } from './routes/state.ts';
 import { tagsRouter } from './routes/tags.ts';
+import { unsubscribeRouter } from './routes/unsubscribe.ts';
 import { wishesRouter } from './routes/wishes.ts';
 
 const app = express();
@@ -89,11 +93,14 @@ app.use('/api/state', stateRouter);
 app.use('/api/applications', applicationsRouter);
 app.use('/api/activities', activitiesRouter);
 app.use('/api/reminders', remindersRouter);
+app.use('/api/documents', documentsRouter);
 app.use('/api/notes', notesRouter);
 app.use('/api/bookmarks', bookmarksRouter);
 app.use('/api/wishes', wishesRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/settings', settingsRouter);
+// Sengaja tanpa sesi (PRD § 6.13) — penjaganya tanda tangan HMAC di tautannya.
+app.use('/api/unsubscribe', unsubscribeRouter);
 
 // Rute resource menyusul di sini seiring M1.
 
@@ -127,7 +134,15 @@ const info = await assertDatabaseReachable();
 app.listen(env.port, () => {
   console.log(`server siap di http://localhost:${env.port}`);
   console.log(`database  ${info.name} (MySQL ${info.version})`);
+  // Tanpa baris ini, RESEND_API_KEY yang salah ketik tidak menimbulkan galat
+  // apa pun sampai email pertama diam-diam gagal terkirim.
+  console.log(
+    `email     ${emailConfigured ? 'Resend aktif' : 'MATI — RESEND_API_KEY belum diisi'}`,
+  );
   if (!existsSync(distDir)) {
     console.log('dist/ belum ada — jalankan "npm run dev" untuk frontend, atau "npm run build"');
   }
+  // Setelah port terangkat, bukan sebelumnya: tugas terjadwal tidak boleh
+  // menunda saat aplikasi mulai melayani permintaan.
+  startScheduler();
 });
