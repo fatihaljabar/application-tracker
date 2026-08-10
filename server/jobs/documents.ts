@@ -18,20 +18,22 @@ import { deleteObject, r2Configured } from '../lib/r2.ts';
  */
 
 /**
- * 24 jam, dihitung OLEH MySQL — bukan di JavaScript.
+ * 24 jam — dan `UTC_TIMESTAMP`, bukan `NOW`.
  *
- * Ini bukan selera. Pool dikonfigurasi `timezone: 'Z'` sehingga objek Date
- * dikirim sebagai UTC, sementara zona sesi MySQL mengikuti `SYSTEM`. Sebuah
- * `new Date(Date.now() - 24 jam)` karena itu sampai di MySQL sebagai waktu yang
- * meleset sebesar offset server: diukur di sini, "24 jam lalu" diterima sebagai
- * 31 jam lalu di zona WIB (+7).
+ * Kolom waktu di tabel ini berisi UTC: pool dikonfigurasi `timezone: 'Z'`,
+ * jadi objek Date yang ditulis aplikasi diserialisasi sebagai UTC. Sementara
+ * `NOW()` mengembalikan waktu LOKAL server database — di WIB itu tujuh jam
+ * lebih maju. Membandingkan keduanya menggeser ambangnya sebesar offset server:
+ * diukur langsung, ambang berbasis NOW menyapu baris yang baru berumur 20 jam.
  *
- * Di server dengan offset positif akibatnya cuma menyapu terlambat. Di server
- * dengan offset NEGATIF arahnya terbalik — baris yang belum 24 jam ikut
- * terhapus, dan itu menghapus unggahan yang masih berjalan. Membiarkan MySQL
- * mengurangi waktunya sendiri membuat seluruh pertanyaan itu tidak ada.
+ * `UTC_TIMESTAMP` berada di kerangka yang sama dengan isi kolomnya, jadi
+ * ambangnya tepat 24 jam di zona mana pun server itu berdiri.
+ *
+ * Objek Date dari JavaScript juga benar di sini, dan itulah bentuk aslinya.
+ * SQL dipilih supaya kerangka waktunya tertulis di kuerinya sendiri, tidak
+ * bergantung pada opsi `timezone` pool tetap seperti sekarang.
  */
-const STALE_CUTOFF = sql`NOW(3) - INTERVAL 24 HOUR`;
+const STALE_CUTOFF = sql`UTC_TIMESTAMP(3) - INTERVAL 24 HOUR`;
 
 /**
  * Dibatasi supaya satu putaran tidak memegang koneksi pool terlalu lama —
