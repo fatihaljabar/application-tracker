@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 import { Router } from 'express';
-import type { DocFile } from '../../shared/types.ts';
+import {
+  DOC_MAX_COUNT,
+  DOC_MAX_FILE_BYTES,
+  DOC_MAX_TOTAL_BYTES,
+  type DocFile,
+} from '../../shared/types.ts';
 import { db } from '../db/client.ts';
 import { documents } from '../db/schema.ts';
 import { ApiError } from '../lib/middleware.ts';
@@ -11,14 +16,6 @@ import { documentInput, parse, uuid } from '../lib/validate.ts';
 
 export const documentsRouter = Router();
 documentsRouter.use(requireAuth);
-
-/**
- * Batas dari PRD § 6.7. Ada di server karena di sinilah keputusannya diambil —
- * pemeriksaan serupa di halaman Dokumen itu kenyamanan, bukan keamanan.
- */
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
-const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
-const MAX_DOCUMENTS = 50;
 
 /** Bentuk yang sudah dipakai store.tsx, sama seperti di GET /state. */
 const toDocFile = (row: typeof documents.$inferSelect): DocFile => ({
@@ -69,15 +66,15 @@ documentsRouter.post('/upload-url', async (req, res) => {
   const userId = req.userId as string;
   const input = parse(documentInput, req.body);
 
-  if (input.size > MAX_FILE_BYTES) {
+  if (input.size > DOC_MAX_FILE_BYTES) {
     throw new ApiError(413, 'file_too_large', 'Ukuran berkas maksimum 2 MB.', 'size');
   }
 
   const usage = await usageOf(userId);
-  if (usage.count >= MAX_DOCUMENTS) {
-    throw new ApiError(413, 'quota_exceeded', `Jumlah dokumen maksimum ${MAX_DOCUMENTS}.`);
+  if (usage.count >= DOC_MAX_COUNT) {
+    throw new ApiError(413, 'quota_exceeded', `Jumlah dokumen maksimum ${DOC_MAX_COUNT}.`);
   }
-  if (usage.bytes + input.size > MAX_TOTAL_BYTES) {
+  if (usage.bytes + input.size > DOC_MAX_TOTAL_BYTES) {
     throw new ApiError(
       413,
       'quota_exceeded',
@@ -141,7 +138,7 @@ documentsRouter.post('/:id/confirm', async (req, res) => {
   }
 
   const usage = await usageOf(userId);
-  if (actual > MAX_FILE_BYTES || usage.bytes + actual > MAX_TOTAL_BYTES) {
+  if (actual > DOC_MAX_FILE_BYTES || usage.bytes + actual > DOC_MAX_TOTAL_BYTES) {
     await deleteObject(row.objectKey);
     await db.delete(documents).where(eq(documents.id, id));
     throw new ApiError(413, 'quota_exceeded', 'Berkas melebihi batas ukuran atau kuota Anda.');

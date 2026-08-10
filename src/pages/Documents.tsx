@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { PageHeader } from '../components/shared';
-import { Button, Confirm, Empty, Field, Icon, Input, Modal, SearchInput, Select } from '../components/ui';
+import { Button, Confirm, Empty, Field, Icon, Input, Modal, Progress, SearchInput, Select } from '../components/ui';
 import { DOC_CATEGORIES } from '../lib/constants';
-import type { DocCategory, DocFile } from '@shared/types';
+import { DOC_MAX_COUNT, DOC_MAX_FILE_BYTES, DOC_MAX_TOTAL_BYTES, type DocCategory, type DocFile } from '@shared/types';
 import { cx, fileSize, fmtDate } from '../lib/utils';
 
 const CAT_ICON: Record<DocCategory, string> = {
@@ -17,7 +17,7 @@ const CAT_ICON: Record<DocCategory, string> = {
 };
 
 export default function Documents() {
-  const { t, db, lang, addDoc, deleteDoc, toast } = useStore();
+  const { t, db, lang, addDoc, deleteDoc, toast, saving, uploadPercent } = useStore();
   const tz = db.settings.timezone;
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('');
@@ -51,8 +51,11 @@ export default function Documents() {
     ]) as [string, DocFile[]][];
   }, [db.docs, q, cat]);
 
+  // Hanya dokumen siap yang dihitung — sama seperti perhitungan kuota di server.
+  const usedBytes = db.docs.reduce((sum, d) => sum + d.size, 0);
+
   const readFile = (file: File) => {
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > DOC_MAX_FILE_BYTES) {
       toast(t('doc.tooBig'), 'error');
       return;
     }
@@ -69,14 +72,16 @@ export default function Documents() {
     reader.readAsDataURL(file);
   };
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!pending) e.file = t('doc.dropHint');
     if (!meta.label.trim()) e.label = `${t('doc.label')} ${t('c.required')}`;
     if (!meta.group.trim()) e.group = `${t('doc.group')} ${t('c.required')}`;
     setErr(e);
     if (Object.keys(e).length || !pending) return;
-    addDoc({
+    // Menunggu server sebelum menutup. Form yang menutup lebih dulu pernah
+    // membuat isian pengguna hilang saat simpan ternyata gagal.
+    const ok = await addDoc({
       name: pending.name,
       label: meta.label.trim(),
       group: meta.group.trim(),
@@ -88,8 +93,8 @@ export default function Documents() {
       dataUrl: pending.dataUrl,
       uploadedAt: new Date().toISOString(),
       note: meta.note.trim(),
-    });
-    toast(t('doc.uploaded'));
+    }, t('doc.uploaded'));
+    if (!ok) return;
     setOpen(false);
     setPending(null);
     setMeta({ label: '', group: 'CV Utama', category: 'cv', language: 'id', version: 'v1', note: '' });
@@ -118,6 +123,30 @@ export default function Documents() {
             { value: '', label: t('c.all') },
             ...DOC_CATEGORIES.map((c) => ({ value: c, label: t(`doc.cat.${c}`) })),
           ]}
+        />
+      </div>
+
+      {/* A7 — sisa kuota penyimpanan (PRD § 6.7: "pengguna melihat sisa
+          kuotanya di halaman Dokumen"). Dihitung dari data yang sudah ada di
+          memori, jadi tidak ada panggilan tambahan. Angka yang mengikat tetap
+          pemeriksaan di server. */}
+      <div className="anim-fade-up mt-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
+        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <span className="flex items-center gap-2 text-[12.5px] font-medium text-[var(--ink)]">
+            <Icon name="fi-rr-cloud" className="text-[12px] text-[var(--ink-muted)]" />
+            {t('doc.quota')}
+          </span>
+          <span className="text-[11.5px] text-[var(--ink-muted)]">
+            {/* fileSize(0) sengaja em dash untuk "ukuran tak diketahui" di kartu
+                dokumen; di sini nol adalah angka yang sah dan harus terbaca. */}
+            {usedBytes ? fileSize(usedBytes) : '0 MB'} {t('doc.quotaOf')}{' '}
+            {fileSize(DOC_MAX_TOTAL_BYTES)} ·{' '}
+            {db.docs.length}/{DOC_MAX_COUNT}
+          </span>
+        </div>
+        <Progress
+          value={(usedBytes / DOC_MAX_TOTAL_BYTES) * 100}
+          color={usedBytes / DOC_MAX_TOTAL_BYTES >= 0.9 ? 'var(--danger)' : undefined}
         />
       </div>
 
@@ -170,17 +199,16 @@ export default function Documents() {
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                        {d.dataUrl ? (
-                          <a href={d.dataUrl} download={d.name} title={t('doc.download')}>
-                            <span className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)]">
-                              <Icon name="fi-rr-download" className="text-[11px]" />
-                            </span>
-                          </a>
-                        ) : (
-                          <span className="grid h-7 w-7 place-items-center rounded-full text-[var(--line-strong)]">
+                        {/* Tautan biasa, bukan fetch: unduhan adalah navigasi ke
+                            endpoint kita, yang memeriksa kepemilikan lalu
+                            mengalihkan ke URL bertanda tangan berumur 5 menit.
+                            Navigasi tidak tunduk CORS — fetch tunduk, dan akan
+                            ditolak karena bucket hanya mengizinkan PUT. */}
+                        <a href={`/api/documents/${d.id}/download`} title={t('doc.download')}>
+                          <span className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)]">
                             <Icon name="fi-rr-download" className="text-[11px]" />
                           </span>
-                        )}
+                        </a>
                         <button type="button"
                           onClick={() => setConfirmId(d.id)}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
@@ -204,10 +232,10 @@ export default function Documents() {
         subtitle={t('doc.maxSize')}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
+            <Button variant="ghost" disabled={saving} onClick={() => setOpen(false)}>
               {t('c.cancel')}
             </Button>
-            <Button variant="primary" icon="fi-rr-check" onClick={submit}>
+            <Button variant="primary" icon="fi-rr-check" pending={saving} onClick={submit}>
               {t('c.save')}
             </Button>
           </>
@@ -254,6 +282,18 @@ export default function Documents() {
             />
           </div>
           {err.file && <p className="text-[11.5px] text-[var(--danger)]">{err.file}</p>}
+
+          {/* A3 — kemajuan unggah. Berkas 2 MB butuh beberapa detik di jaringan
+              lambat, dan tanpa penanda ini layar terlihat menggantung. */}
+          {uploadPercent !== null && (
+            <div className="anim-fade space-y-1.5">
+              <div className="flex items-center justify-between text-[11.5px] text-[var(--ink-muted)]">
+                <span>{t('doc.uploading')}</span>
+                <span>{uploadPercent}%</span>
+              </div>
+              <Progress value={uploadPercent} />
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('doc.label')} error={err.label}>

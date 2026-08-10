@@ -27,6 +27,22 @@ export class ApiError extends Error {
   get isConflict() {
     return this.status === 409;
   }
+
+  /**
+   * Server tidak terjangkau — bukan sekadar permintaan yang ditolak.
+   *
+   * Dua bentuk, dan keduanya nyata:
+   * - `status 0`: fetch gagal total, tidak ada balasan. Ini bentuknya di
+   *   produksi, tempat Express melayani halaman dan API sekaligus.
+   * - `5xx tanpa bentuk galat kita`: ada yang menjawab, tapi bukan aplikasi
+   *   ini. Di pengembangan itu proxy Vite saat backend mati; di produksi bisa
+   *   gerbang di depan Node. Kode `error` berarti tidak ada `{ error: { … } }`
+   *   di badan balasan — aplikasi kita SELALU mengirimnya, jadi 500 dari kita
+   *   sendiri (kode `internal`) sengaja tidak ikut: itu bug, bukan koneksi.
+   */
+  get isUnreachable() {
+    return this.status === 0 || (this.status >= 500 && this.code === 'error');
+  }
 }
 
 const OFFLINE = 'Tidak bisa menghubungi server. Periksa koneksi, lalu coba lagi.';
@@ -74,3 +90,41 @@ export const patch = <T = unknown>(path: string, data: unknown) =>
   api<T>(path, { method: 'PATCH', body: JSON.stringify(data) });
 
 export const del = <T = unknown>(path: string) => api<T>(path, { method: 'DELETE' });
+
+/**
+ * PUT berkas langsung ke penyimpanan objek, dengan laporan kemajuan.
+ *
+ * Memakai XMLHttpRequest, bukan `fetch`, karena satu alasan: `fetch` tidak bisa
+ * melaporkan kemajuan UNGGAH sama sekali. Berkas 2 MB di jaringan 4G lambat
+ * butuh beberapa detik, dan tanpa penanda kemajuan layar terlihat menggantung —
+ * pengguna akan menekan tombolnya dua kali (PRD Lampiran A, A3).
+ *
+ * Ini satu-satunya panggilan yang tidak lewat `api()`: tujuannya bukan server
+ * kita, jadi tidak ada bentuk galat `{ error: { code } }` yang bisa dibaca.
+ */
+export function uploadFile(
+  url: string,
+  blob: Blob,
+  onProgress: (percent: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', blob.type);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+        return;
+      }
+      reject(new ApiError(xhr.status, 'upload_failed', 'Berkas gagal diunggah. Coba lagi.'));
+    };
+    // Termasuk kasus CORS ditolak: peramban tidak memberi tahu bedanya, jadi
+    // pesannya harus tetap masuk akal bagi pengguna.
+    xhr.onerror = () => reject(new ApiError(0, 'offline', OFFLINE));
+    xhr.onabort = () => reject(new ApiError(0, 'aborted', 'Unggahan dibatalkan.'));
+    xhr.send(blob);
+  });
+}
