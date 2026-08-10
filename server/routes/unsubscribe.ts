@@ -58,10 +58,15 @@ unsubscribeRouter.all('/', async (req, res) => {
     .set({ emailNotif: false, dailyReminder: false })
     .where(eq(settings.userId, userId));
 
+  // Kata "berlangganan" sengaja DIHINDARI di teks yang dibaca pengguna.
+  // Aplikasi ini gratis tanpa iklan, dan dalam bahasa Indonesia "berhenti
+  // berlangganan" terbaca seperti membatalkan paket berbayar — pengguna bisa
+  // mengira dia baru saja menghapus akunnya. Kalimat kedua menegaskan bahwa
+  // yang berhenti cuma emailnya.
   res.send(
     page(
-      'Kamu berhenti berlangganan',
-      'Kami tidak akan mengirim email pengingat lagi. Kamu bisa menyalakannya kembali kapan saja di halaman Pengaturan.',
+      'Email pengingat dimatikan',
+      'Kami tidak akan mengirim email pengingat lagi. Akun dan seluruh data lamaranmu tetap utuh — kamu bisa menyalakan emailnya lagi kapan saja di halaman Pengaturan.',
     ),
   );
 });
