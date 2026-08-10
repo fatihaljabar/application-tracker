@@ -87,6 +87,19 @@ export const settings = mysqlTable('settings', {
   dailyReminder: boolean('daily_reminder').notNull().default(true),
   notifyEmail: varchar('notify_email', { length: 255 }).notNull(),
   cvValidDays: smallint('cv_valid_days').notNull().default(90),
+  /**
+   * Tanggal LOKAL pengguna saat rangkuman harian terakhir dikirim.
+   *
+   * Rangkuman tidak punya baris sendiri untuk diklaim seperti reminder punya
+   * `sent_at`, jadi inilah penjaganya. Tanpa ini satu pengguna bisa menerima
+   * rangkuman berkali-kali dalam satu pagi: produksi menjalankan lebih dari
+   * satu proses Node, masing-masing menjalankan tugasnya sekali saat start,
+   * dan prosesnya didaur ulang beberapa kali per jam.
+   *
+   * Disimpan sebagai DATE di zona pengguna, bukan timestamp, karena
+   * pertanyaannya memang "sudah dikirim untuk hari ini menurut dia?"
+   */
+  lastDigestOn: date('last_digest_on', { mode: 'string' }),
 });
 
 /* ----------------------------------------------------------- applications */
@@ -117,6 +130,16 @@ export const applications = mysqlTable(
     tags: json('tags').$type<string[]>().notNull(),
     archived: boolean('archived').notNull().default(false),
     favorite: boolean('favorite').notNull().default(false),
+    /**
+     * Pengguna sudah menghapus reminder follow-up otomatis untuk lamaran ini,
+     * jadi jangan pernah dibuatkan lagi (PRD § 6.6).
+     *
+     * Kolom ini ada karena `auto_key` saja TIDAK cukup: keunikannya menjaga
+     * selama barisnya hidup, tapi begitu pengguna menghapusnya kunci itu ikut
+     * hilang dan tugas harian membuatnya lagi besok. Penghapusan perlu
+     * meninggalkan jejak yang bertahan, dan inilah jejaknya.
+     */
+    followupDismissed: boolean('followup_dismissed').notNull().default(false),
     createdAt: datetime('created_at', { fsp: 3 }).notNull(),
     // Dipakai untuk deteksi konflik antar tab: PUT yang membawa updatedAt lebih
     // lama dari baris di database ditolak dengan 409 (TECHNICAL.md § 7).
