@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lt, ne } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lt, ne, or } from 'drizzle-orm';
 import { db } from '../db/client.ts';
 import { applications, reminders, settings, users } from '../db/schema.ts';
 import { emailConfigured, sendMail } from '../lib/email.ts';
@@ -91,8 +91,18 @@ export async function sendDailyDigests(): Promise<number> {
     const klaim = await db
       .update(settings)
       .set({ lastDigestOn: now.tanggal })
-      .where(and(eq(settings.userId, u.userId), ne(settings.lastDigestOn, now.tanggal)));
-    // MySQL melaporkan 0 bila nilainya sudah sama — artinya proses lain menang.
+      .where(
+        and(
+          eq(settings.userId, u.userId),
+          // `IS NULL` WAJIB ada di sini. Pengguna baru punya last_digest_on
+          // NULL, dan di SQL `NULL <> '2026-08-10'` bernilai NULL — bukan TRUE.
+          // Tanpa cabang ini klaimnya tidak pernah berhasil dan rangkuman
+          // PERTAMA setiap pengguna tidak akan pernah terkirim, tanpa galat apa
+          // pun. Terbukti begitu saat diuji.
+          or(isNull(settings.lastDigestOn), ne(settings.lastDigestOn, now.tanggal)),
+        ),
+      );
+    // 0 baris berarti proses lain sudah mengklaim hari ini lebih dulu.
     if ((klaim[0] as { affectedRows: number }).affectedRows !== 1) continue;
 
     const { mulai, selesai } = batasHariLokal(now.tanggal, u.timezone);

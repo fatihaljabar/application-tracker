@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, or } from 'drizzle-orm';
 import { db } from './db/client.ts';
 import { applications, reminders, settings, statusHistory, users } from './db/schema.ts';
 import { batasHariLokal, lokal } from './jobs/digest.ts';
@@ -88,6 +88,58 @@ describe('zona waktu rangkuman harian', () => {
     // Zona lain memulai harinya di instan yang berbeda.
     const la = batasHariLokal('2026-08-11', 'America/Los_Angeles');
     assert.equal(la.mulai.toISOString(), '2026-08-11T07:00:00.000Z');
+  });
+});
+
+describe('klaim hari rangkuman', () => {
+  const u = randomUUID();
+  const hariIni = '2026-08-11';
+
+  before(async () => {
+    const at = new Date();
+    await db.insert(users).values({
+      id: u,
+      googleSub: `klaim-${u}`,
+      email: `klaim-${u.slice(0, 8)}@digest.test`,
+      name: 'Uji Klaim',
+      avatarUrl: null,
+      createdAt: at,
+      lastSeenAt: at,
+    });
+    await db.insert(settings).values({ userId: u, notifyEmail: 'klaim@digest.test' });
+  });
+
+  after(async () => {
+    await db.delete(users).where(eq(users.id, u));
+  });
+
+  /** Klaim yang sama persis seperti di sendDailyDigests. */
+  const klaim = async (tanggal: string) => {
+    const res = await db
+      .update(settings)
+      .set({ lastDigestOn: tanggal })
+      .where(
+        and(
+          eq(settings.userId, u),
+          or(isNull(settings.lastDigestOn), ne(settings.lastDigestOn, tanggal)),
+        ),
+      );
+    return (res[0] as { affectedRows: number }).affectedRows;
+  };
+
+  it('pengguna baru (last_digest_on NULL) BISA diklaim', async () => {
+    // Inilah bug yang sempat ada: tanpa cabang IS NULL, `NULL <> '2026-08-11'`
+    // bernilai NULL di SQL — bukan TRUE — jadi klaimnya gagal dan rangkuman
+    // PERTAMA setiap pengguna tidak akan pernah terkirim, tanpa galat apa pun.
+    assert.equal(await klaim(hariIni), 1, 'pengguna baru tidak bisa mengklaim hari pertamanya');
+  });
+
+  it('hari yang sama tidak bisa diklaim dua kali', async () => {
+    assert.equal(await klaim(hariIni), 0, 'rangkuman bisa terkirim dua kali di hari yang sama');
+  });
+
+  it('hari berikutnya bisa diklaim lagi', async () => {
+    assert.equal(await klaim('2026-08-12'), 1, 'rangkuman berhenti setelah hari pertama');
   });
 });
 
