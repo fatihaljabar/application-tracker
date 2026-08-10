@@ -15,6 +15,13 @@
       "when": 1785830713384,
       "tag": "0001_datetime_precision",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786383568634,
+      "tag": "0002_aspiring_adam_warlock",
+      "breakpoints": true
     }
   ]
 }
