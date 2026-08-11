@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP yang berlaku sesungguhnya; header ditimpa LiteSpeed. Halaman ini
+         statis dan tanpa skrip, jadi kebijakannya lebih ketat daripada aplikasi:
+         tidak ada script-src sama sekali. Google Fonts tetap diizinkan karena
+         halaman ini memuat hurufnya dari sana — tanpa itu tipografinya diam-diam
+         jatuh ke huruf bawaan sistem, dan tidak ada galat yang memberi tahu. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Terms of Service — Job Tracker</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Berkas statis, sengaja tidak memakai React: halaman ini harus bisa dibuka
+         tanpa masuk, dan tidak boleh ikut rusak kalau aplikasinya bermasalah.
+         Warna dan huruf disalin dari src/index.css supaya terlihat satu keluarga. */
+      :root {
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --line: #e6e3dd;
+        --ink: #23211d;
+        --ink-soft: #57534a;
+        --ink-muted: #8d887d;
+        --accent: #2f6f5e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16171a;
+          --surface: #1e2024;
+          --line: #2e3137;
+          --ink: #eceae5;
+          --ink-soft: #b6b2aa;
+          --ink-muted: #8d887d;
+          --accent: #6aa892;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -0.03em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        letter-spacing: -0.015em;
+        margin: 40px 0 10px;
+      }
+      p, li { color: var(--ink-soft); }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 6px; }
+      strong { color: var(--ink); font-weight: 600; }
+      a { color: var(--accent); }
+      .tanggal { color: var(--ink-muted); font-size: 13px; margin: 0 0 32px; }
+      .kotak {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin: 24px 0;
+      }
+      .kotak p:first-child { margin-top: 0; }
+      .kotak p:last-child { margin-bottom: 0; }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Terms of Service</h1>
+      <p class="tanggal">
+        Job Tracker · effective 11 August 2026 · <a href="/syarat.html">Bahasa Indonesia</a>
+      </p>
+
+      <p>
+        This page sets out what you get from the service, what is not promised, and what is
+        expected of you. Written short and without unnecessary legal phrasing — terms nobody
+        can read are the same as no terms at all.
+      </p>
+
+      <div class="kotak">
+        <p>
+          <strong>In short:</strong> this service is free and run by one person. Your data is
+          yours, downloadable and deletable at any time. There is no guarantee it will always
+          be available, and the storage is not a place to park unrelated files.
+        </p>
+      </div>
+
+      <h2>The service</h2>
+      <p>
+        Job Tracker is an application for recording and tracking your own job applications.
+        <strong>Free, ad-free, with no paid tier.</strong> That is a product decision, not a
+        stage before charging for it.
+      </p>
+
+      <h2>Accounts</h2>
+      <ul>
+        <li>Signing in works through Google only. No passwords, no guest mode.</li>
+        <li>
+          Keeping your Google account secure is your responsibility. Anyone who can sign in to
+          it can read your application history here.
+        </li>
+        <li>One Google account, one account on this service.</li>
+      </ul>
+
+      <h2>Usage limits</h2>
+      <p>
+        Because the service is free and open to anyone, there are per-user limits. They are
+        enforced on the server, not merely in the interface:
+      </p>
+      <ul>
+        <li>File size: <strong>2 MB</strong> per document</li>
+        <li>Total storage: <strong>20 MB</strong> per user</li>
+        <li>Documents: <strong>50</strong></li>
+        <li>Applications: <strong>500</strong></li>
+        <li>Accepted file types: PDF, DOC, DOCX, PNG, JPG</li>
+      </ul>
+      <p>
+        These may change if real usage calls for it. If you hit one of them for a reasonable
+        reason, get in touch.
+      </p>
+
+      <h2>What is not allowed</h2>
+      <ul>
+        <li>
+          Using document storage for files unrelated to your job search. This is an application
+          tracker, not a file host.
+        </li>
+        <li>Uploading anything unlawful, or anything that is not yours to distribute.</li>
+        <li>
+          Attempting to reach another user's data, or loading the service with automated
+          requests beyond reasonable use.
+        </li>
+      </ul>
+      <p>
+        Accounts in breach may be terminated without prior notice. So far this has never
+        happened.
+      </p>
+
+      <h2>No warranty</h2>
+      <p>
+        The service is provided <strong>as is</strong>. It is built and paid for by one person
+        and runs on shared hosting.
+      </p>
+      <ul>
+        <li>
+          <strong>No availability guarantee.</strong> It may go down, be slow, or misbehave
+          without notice.
+        </li>
+        <li>
+          <strong>No guarantee that reminder emails arrive.</strong> Delivery depends on a
+          third-party service and on your own email provider. Do not let this application be
+          your only reminder for something that genuinely matters.
+        </li>
+        <li>
+          <strong>Keep your own copy.</strong> There is an Export data button in Settings, and
+          it is worth using now and then.
+        </li>
+      </ul>
+
+      <h2>The service may shut down</h2>
+      <p>
+        If it is ever discontinued, notice goes to your email address first, with enough time
+        to export your data. Export exists from the start precisely so that you are never
+        locked in.
+      </p>
+
+      <h2>Deleting an account</h2>
+      <p>
+        <strong>By you, at any time.</strong> Settings &rarr; Account &amp; Data &rarr; Delete
+        account. Every application, document, reminder and note is removed from the database,
+        and your files are removed from storage. It cannot be undone.
+      </p>
+      <p>
+        <strong>By the service owner, after 24 months of inactivity.</strong> Accounts not
+        opened for 24 months are deleted, after a warning is sent to your email address first.
+        The reason is simple: holding someone's personal data after they have stopped using it
+        is risk without benefit.
+      </p>
+
+      <h2>Your data</h2>
+      <p>
+        The contents of your account belong to you. They are not sold, not shared, and not used
+        for anything other than running this service. The details — what is stored, who can see
+        it, and which third parties are involved — are in the
+        <a href="/privacy.html">Privacy Policy</a>.
+      </p>
+
+      <h2>Changes to these terms</h2>
+      <p>
+        If these terms change, the date above changes with them. Changes that materially affect
+        users will be announced by email.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions, objections, or security reports:
+        <a href="mailto:fatihaljabar@gmail.com">fatihaljabar@gmail.com</a>.
+      </p>
+
+      <footer>
+        <p>
+          Source is open on
+          <a href="https://github.com/fatihaljabar/application-tracker">GitHub</a> ·
+          <a href="/privacy.html">Privacy policy</a> ·
+          <a href="/">Open the app</a>
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

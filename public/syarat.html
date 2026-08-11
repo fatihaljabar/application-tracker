@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP yang berlaku sesungguhnya; header ditimpa LiteSpeed. Halaman ini
+         statis dan tanpa skrip, jadi kebijakannya lebih ketat daripada aplikasi:
+         tidak ada script-src sama sekali. Google Fonts tetap diizinkan karena
+         halaman ini memuat hurufnya dari sana — tanpa itu tipografinya diam-diam
+         jatuh ke huruf bawaan sistem, dan tidak ada galat yang memberi tahu. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Syarat &amp; Ketentuan — Tracking Lamaran</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Berkas statis, sengaja tidak memakai React: halaman ini harus bisa dibuka
+         tanpa masuk, dan tidak boleh ikut rusak kalau aplikasinya bermasalah.
+         Warna dan huruf disalin dari src/index.css supaya terlihat satu keluarga. */
+      :root {
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --line: #e6e3dd;
+        --ink: #23211d;
+        --ink-soft: #57534a;
+        --ink-muted: #8d887d;
+        --accent: #2f6f5e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16171a;
+          --surface: #1e2024;
+          --line: #2e3137;
+          --ink: #eceae5;
+          --ink-soft: #b6b2aa;
+          --ink-muted: #8d887d;
+          --accent: #6aa892;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -0.03em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        letter-spacing: -0.015em;
+        margin: 40px 0 10px;
+      }
+      p, li { color: var(--ink-soft); }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 6px; }
+      strong { color: var(--ink); font-weight: 600; }
+      a { color: var(--accent); }
+      .tanggal { color: var(--ink-muted); font-size: 13px; margin: 0 0 32px; }
+      .kotak {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin: 24px 0;
+      }
+      .kotak p:first-child { margin-top: 0; }
+      .kotak p:last-child { margin-bottom: 0; }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Syarat &amp; Ketentuan</h1>
+      <p class="tanggal">
+        Tracking Lamaran · berlaku 11 Agustus 2026 · <a href="/terms.html">English</a>
+      </p>
+
+      <p>
+        Halaman ini menjelaskan apa yang Anda dapat dari layanan ini, apa yang tidak
+        dijanjikan, dan apa yang diharapkan dari Anda. Ditulis pendek dan tanpa istilah hukum
+        yang tidak perlu — ketentuan yang tidak bisa dibaca sama saja dengan tidak ada.
+      </p>
+
+      <div class="kotak">
+        <p>
+          <strong>Ringkasnya:</strong> layanan ini gratis dan dikerjakan satu orang. Data Anda
+          milik Anda, bisa diunduh dan dihapus kapan saja. Tidak ada jaminan layanan ini selalu
+          tersedia, dan penyimpanannya bukan tempat menitipkan berkas sembarangan.
+        </p>
+      </div>
+
+      <h2>Layanan ini</h2>
+      <p>
+        Tracking Lamaran adalah aplikasi untuk mencatat dan melacak lamaran kerja Anda sendiri.
+        <strong>Gratis, tanpa iklan, tanpa langganan berbayar.</strong> Itu keputusan produk,
+        bukan tahap sementara sebelum berbayar.
+      </p>
+
+      <h2>Akun</h2>
+      <ul>
+        <li>Masuk hanya dengan akun Google. Tidak ada kata sandi dan tidak ada mode tamu.</li>
+        <li>
+          Keamanan akun Google Anda tanggung jawab Anda. Siapa pun yang bisa masuk ke akun
+          Google Anda bisa membuka data lamaran Anda di sini.
+        </li>
+        <li>Satu akun Google untuk satu akun di layanan ini.</li>
+      </ul>
+
+      <h2>Batas pemakaian</h2>
+      <p>
+        Karena gratis dan terbuka untuk umum, ada batas per pengguna. Angkanya diberlakukan di
+        server, bukan sekadar di tampilan:
+      </p>
+      <ul>
+        <li>Ukuran berkas: <strong>2 MB</strong> per dokumen</li>
+        <li>Total penyimpanan: <strong>20 MB</strong> per pengguna</li>
+        <li>Jumlah dokumen: <strong>50</strong></li>
+        <li>Jumlah lamaran: <strong>500</strong></li>
+        <li>Tipe berkas yang diterima: PDF, DOC, DOCX, PNG, JPG</li>
+      </ul>
+      <p>
+        Batas ini bisa berubah kalau pemakaian nyata menuntutnya. Kalau Anda mentok di salah
+        satunya karena alasan yang wajar, hubungi saya.
+      </p>
+
+      <h2>Yang tidak boleh</h2>
+      <ul>
+        <li>
+          Memakai penyimpanan dokumen untuk berkas yang tidak berhubungan dengan lamaran kerja
+          Anda. Ini pelacak lamaran, bukan tempat menitipkan berkas.
+        </li>
+        <li>Mengunggah apa pun yang melanggar hukum atau bukan milik Anda untuk disebarkan.</li>
+        <li>
+          Mencoba mengakses data pengguna lain, atau membebani layanan dengan permintaan
+          otomatis di luar kewajaran.
+        </li>
+      </ul>
+      <p>
+        Akun yang melanggar bisa dihentikan tanpa pemberitahuan lebih dulu. Sejauh ini itu
+        belum pernah terjadi.
+      </p>
+
+      <h2>Tanpa jaminan</h2>
+      <p>
+        Layanan ini disediakan <strong>apa adanya</strong>. Dikerjakan dan dibiayai satu orang,
+        berjalan di hosting bersama.
+      </p>
+      <ul>
+        <li>
+          <strong>Tidak ada jaminan ketersediaan.</strong> Layanan bisa mati, lambat, atau
+          bermasalah tanpa pemberitahuan.
+        </li>
+        <li>
+          <strong>Tidak ada jaminan email pengingat pasti sampai.</strong> Pengiriman email
+          bergantung pada layanan pihak ketiga dan penyedia email Anda. Jangan menjadikan
+          aplikasi ini satu-satunya pengingat untuk hal yang benar-benar penting.
+        </li>
+        <li>
+          <strong>Simpan salinan Anda sendiri.</strong> Ada tombol Ekspor data di Pengaturan,
+          dan sebaiknya sesekali dipakai.
+        </li>
+      </ul>
+
+      <h2>Layanan bisa berhenti</h2>
+      <p>
+        Kalau suatu saat layanan ini ditutup, pemberitahuan akan dikirim ke alamat email Anda
+        lebih dulu, dengan waktu yang cukup untuk mengekspor data Anda. Fitur ekspor sengaja
+        ada sejak awal supaya Anda tidak pernah terkunci di dalam.
+      </p>
+
+      <h2>Menghapus akun</h2>
+      <p>
+        <strong>Oleh Anda, kapan saja.</strong> Pengaturan &rarr; Akun &amp; Data &rarr; Hapus
+        akun. Seluruh lamaran, dokumen, pengingat, dan catatan dihapus dari basis data, dan
+        berkasnya dihapus dari penyimpanan. Tidak bisa dibatalkan.
+      </p>
+      <p>
+        <strong>Oleh pemilik layanan, setelah 24 bulan tidak aktif.</strong> Akun yang tidak
+        dibuka selama 24 bulan akan dihapus, setelah pemberitahuan lebih dulu ke alamat email
+        Anda. Alasannya sederhana: menyimpan data pribadi orang yang sudah tidak memakainya
+        adalah risiko tanpa manfaat.
+      </p>
+
+      <h2>Data Anda</h2>
+      <p>
+        Isi akun Anda milik Anda. Tidak dijual, tidak dibagikan, dan tidak dipakai untuk
+        apa pun selain menjalankan layanan ini. Rinciannya — apa yang disimpan, siapa yang bisa
+        melihat, dan pihak ketiga mana yang terlibat — ada di
+        <a href="/privasi.html">Kebijakan Privasi</a>.
+      </p>
+
+      <h2>Perubahan ketentuan</h2>
+      <p>
+        Kalau ketentuan ini berubah, tanggal di atas ikut berubah. Perubahan yang berdampak
+        besar bagi pengguna akan diberitahukan lewat email.
+      </p>
+
+      <h2>Kontak</h2>
+      <p>
+        Pertanyaan, keberatan, atau laporan masalah keamanan:
+        <a href="mailto:fatihaljabar@gmail.com">fatihaljabar@gmail.com</a>.
+      </p>
+
+      <footer>
+        <p>
+          Kode sumbernya terbuka di
+          <a href="https://github.com/fatihaljabar/application-tracker">GitHub</a> ·
+          <a href="/privasi.html">Kebijakan privasi</a> ·
+          <a href="/">Buka aplikasinya</a>
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
