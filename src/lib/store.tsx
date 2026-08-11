@@ -843,11 +843,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       updateSettings: (p, done) => {
         const next = { ...dbRef.current.settings, ...p };
-        void run(
-          () => put('/settings', next),
-          (d) => ({ ...d, settings: next }),
-          done,
-        );
+        void (async () => {
+          let menunggu: string | null = null;
+          const ok = await run(
+            // Ditangkap DI SINI, bukan di dalam pembaru state di bawah: React
+            // menjalankan pembaru itu belakangan, jadi variabelnya masih kosong
+            // saat `run` selesai dan toast-nya tidak pernah muncul. Terbukti
+            // begitu saat diuji lewat peramban.
+            async () => {
+              const r = await put<{ notifyEmail: string; pendingNotifyEmail: string | null }>(
+                '/settings',
+                next,
+              );
+              menunggu = r.pendingNotifyEmail ?? null;
+              return r;
+            },
+            // Alamat email tujuan diambil dari BALASAN, bukan dari yang dikirim:
+            // alamat baru baru berlaku setelah pemiliknya menekan tautan
+            // konfirmasi, dan sampai itu terjadi server tetap memegang yang
+            // lama. Menampilkan yang baru akan berbohong soal ke mana email
+            // sebenarnya dikirim.
+            (d, r) => ({
+              ...d,
+              settings: { ...next, notifyEmail: r.notifyEmail ?? next.notifyEmail },
+            }),
+            done,
+          );
+          // Toast, bukan dialog: ini kabar, bukan hal yang menghentikan
+          // pengguna (TECHNICAL.md § 6).
+          if (ok && menunggu) {
+            toast(`${translate(lang, 'set.notifyPending')} ${menunggu}`);
+          }
+        })();
       },
 
       signIn: (user) => {

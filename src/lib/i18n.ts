@@ -282,6 +282,8 @@ const id: Dict = {
   'set.deleteAccountWarn': 'Seluruh lamaran, dokumen, pengingat, dan catatanmu akan dihapus dari server dan TIDAK BISA dikembalikan. Masuk lagi dengan akun Google yang sama akan membuat akun baru yang kosong.',
   'set.deleteAccountYes': 'Ya, hapus akun saya',
   'set.accountDeleted': 'Akun dihapus',
+  // Alamat baru baru berlaku setelah pemiliknya menekan tautan konfirmasi.
+  'set.notifyPending': 'Konfirmasi dulu lewat email yang kami kirim ke',
   'set.resetData': 'Hapus semua data',
   'set.resetConfirm': 'Hapus seluruh data aplikasi?',
   'set.account': 'Akun',
@@ -569,6 +571,7 @@ const en: Dict = {
   'set.deleteAccountWarn': 'Every application, document, reminder and note will be removed from the server and CANNOT be recovered. Signing in again with the same Google account creates a fresh, empty one.',
   'set.deleteAccountYes': 'Yes, delete my account',
   'set.accountDeleted': 'Account deleted',
+  'set.notifyPending': 'Confirm first through the email we sent to',
   'set.resetData': 'Erase all data',
   'set.resetConfirm': 'Erase all application data?',
   'set.account': 'Account',

@@ -21,37 +21,54 @@ import { ApiError } from './middleware.ts';
 /** Peta tidak boleh tumbuh tanpa batas — entri kedaluwarsa disapu di ambang ini. */
 const AMBANG_SAPU = 5000;
 
+/**
+ * Penghitungnya sendiri, dipisah dari middleware supaya hal yang dibatasi
+ * BUKAN sebuah permintaan HTTP juga bisa memakainya — misalnya "berapa kali
+ * seorang pengguna boleh memicu email konfirmasi". Satu tempat menghitung,
+ * bukan dua yang lama-lama berbeda.
+ *
+ * `sisaDetik` hanya berarti saat `ok` bernilai false.
+ */
+export function buatPenghitung(opts: { max: number; windowMs: number }) {
+  const hits = new Map<string, { n: number; reset: number }>();
+
+  return function ambil(key: string): { ok: boolean; sisaDetik: number } {
+    const now = Date.now();
+    const cur = hits.get(key);
+
+    if (!cur || now >= cur.reset) {
+      if (hits.size > AMBANG_SAPU) {
+        for (const [k, v] of hits) if (now >= v.reset) hits.delete(k);
+      }
+      hits.set(key, { n: 1, reset: now + opts.windowMs });
+      return { ok: true, sisaDetik: 0 };
+    }
+
+    cur.n += 1;
+    return cur.n > opts.max
+      ? { ok: false, sisaDetik: Math.ceil((cur.reset - now) / 1000) }
+      : { ok: true, sisaDetik: 0 };
+  };
+}
+
 export function rateLimit(opts: {
   max: number;
   windowMs: number;
   key: (req: Request) => string;
   message: string;
 }) {
-  const hits = new Map<string, { n: number; reset: number }>();
+  const ambil = buatPenghitung(opts);
 
   return (req: Request, res: Response, next: NextFunction) => {
-    const now = Date.now();
-    const k = opts.key(req);
-    const cur = hits.get(k);
-
-    if (!cur || now >= cur.reset) {
-      if (hits.size > AMBANG_SAPU) {
-        for (const [key, v] of hits) if (now >= v.reset) hits.delete(key);
-      }
-      hits.set(k, { n: 1, reset: now + opts.windowMs });
+    const hasil = ambil(opts.key(req));
+    if (hasil.ok) {
       next();
       return;
     }
-
-    cur.n += 1;
-    if (cur.n > opts.max) {
-      // Retry-After memberi tahu klien kapan boleh mencoba lagi, alih-alih
-      // membiarkannya menebak dan terus menabrak dinding yang sama.
-      res.setHeader('Retry-After', String(Math.ceil((cur.reset - now) / 1000)));
-      next(new ApiError(429, 'rate_limited', opts.message));
-      return;
-    }
-    next();
+    // Retry-After memberi tahu klien kapan boleh mencoba lagi, alih-alih
+    // membiarkannya menebak dan terus menabrak dinding yang sama.
+    res.setHeader('Retry-After', String(hasil.sisaDetik));
+    next(new ApiError(429, 'rate_limited', opts.message));
   };
 }
 
