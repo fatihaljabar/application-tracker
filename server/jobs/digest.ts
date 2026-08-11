@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lt, ne, or } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { db } from '../db/client.ts';
 import { applications, reminders, settings, users } from '../db/schema.ts';
 import { emailConfigured, sendMail } from '../lib/email.ts';
@@ -107,13 +107,30 @@ export async function sendDailyDigests(): Promise<number> {
 
     const { mulai, selesai } = batasHariLokal(now.tanggal, u.timezone);
 
+    /**
+     * `sent_at IS NULL` WAJIB ada di sini.
+     *
+     * Pengirim pengingat berjalan tiap lima menit, rangkuman ini tiap jam, dan
+     * pengingat turunan H-1/H-3 jatuh tempo pukul 07.00 — jam yang sama dengan
+     * rangkuman. Tanpa saringan ini, pengingat yang baru saja dikirim sebagai
+     * emailnya sendiri muncul lagi di rangkuman beberapa menit kemudian: dua
+     * email, isi sama, satu menit berselang. Terbukti dengan menjalankannya.
+     *
+     * Yang sebaliknya — rangkuman jalan lebih dulu — ditutup oleh klaim di
+     * bawah.
+     */
     const agenda = await db
-      .select({ title: reminders.title, datetime: reminders.datetime })
+      .select({
+        id: reminders.id,
+        title: reminders.title,
+        datetime: reminders.datetime,
+      })
       .from(reminders)
       .where(
         and(
           eq(reminders.userId, u.userId),
           eq(reminders.done, false),
+          isNull(reminders.sentAt),
           gte(reminders.datetime, mulai),
           lt(reminders.datetime, selesai),
         ),
@@ -130,7 +147,12 @@ export async function sendDailyDigests(): Promise<number> {
      * daftar penyesalan yang sama panjang tiap pagi.
      */
     const terlambat = await db
-      .select({ title: reminders.title, datetime: reminders.datetime })
+      .select({
+        id: reminders.id,
+        title: reminders.title,
+        datetime: reminders.datetime,
+        sentAt: reminders.sentAt,
+      })
       .from(reminders)
       .where(
         and(
@@ -158,6 +180,33 @@ export async function sendDailyDigests(): Promise<number> {
     // Tidak ada yang perlu ditindak — hari ini dilewati, dan klaimnya tetap
     // dipegang supaya tidak dihitung ulang tiap jam.
     if (agenda.length === 0 && deadline.length === 0 && terlambat.length === 0) continue;
+
+    /**
+     * Pengingat yang jatuh temponya SUDAH lewat saat rangkuman ini disusun
+     * diantarkan OLEH rangkuman ini — jadi diklaim di sini, supaya pengirim
+     * pengingat tidak mengantarkannya lagi lima menit kemudian.
+     *
+     * Yang jatuh temponya NANTI hari ini sengaja tidak diklaim: "agenda hari
+     * ini" cuma pratinjau, dan pengingat "2 jam lagi" tetap harus datang dua
+     * jam sebelum acaranya, bukan pagi-pagi.
+     *
+     * Ditandai SEBELUM mengirim, dengan alasan yang sama seperti pengirim
+     * pengingat (TECHNICAL § 9): produksi menjalankan lebih dari satu proses,
+     * jadi "kirim dulu baru tandai" tidak bisa menjamin satu email per
+     * kejadian.
+     */
+    const sekarang = new Date();
+    const diantar: string[] = [];
+    for (const r of [
+      ...agenda.filter((a) => a.datetime <= sekarang),
+      ...terlambat.filter((t) => !t.sentAt),
+    ]) {
+      const res = await db
+        .update(reminders)
+        .set({ sentAt: sql`UTC_TIMESTAMP(3)` })
+        .where(and(eq(reminders.id, r.id), isNull(reminders.sentAt)));
+      if ((res[0] as { affectedRows: number }).affectedRows === 1) diantar.push(r.id);
+    }
 
     const jam = (d: Date) =>
       new Intl.DateTimeFormat('id-ID', { timeStyle: 'short', timeZone: u.timezone }).format(d);
@@ -195,6 +244,12 @@ export async function sendDailyDigests(): Promise<number> {
         .update(settings)
         .set({ lastDigestOn: u.lastDigestOn })
         .where(eq(settings.userId, u.userId));
+      // Klaim pengingatnya ikut dilepas. Tanpa ini, pengingat yang gagal
+      // diantar rangkuman tidak akan pernah dikirim oleh siapa pun — sudah
+      // ditandai terkirim padahal tidak pernah sampai.
+      if (diantar.length) {
+        await db.update(reminders).set({ sentAt: null }).where(inArray(reminders.id, diantar));
+      }
     }
   }
   return terkirim;

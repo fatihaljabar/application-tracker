@@ -150,7 +150,14 @@ function body(r: DueReminder) {
 }
 
 /**
- * Satu putaran pengiriman. Mengembalikan jumlah email yang benar-benar terkirim.
+ * Satu putaran pengiriman. Mengembalikan jumlah EMAIL yang benar-benar terkirim
+ * — bukan jumlah pengingat, karena satu email bisa memuat beberapa.
+ *
+ * Pengingat dikelompokkan per pengguna: satu putaran menghasilkan paling banyak
+ * satu email per orang. Sebelumnya tiap baris dikirim sendiri-sendiri, jadi
+ * pagi dengan tiga pengingat jatuh tempo berarti tiga email berturut-turut di
+ * menit yang sama — cara tercepat membuat orang berhenti berlangganan
+ * (PRD § 6.13).
  *
  * Satu pengiriman gagal tidak menghentikan sisanya, dan klaimnya dilepas supaya
  * putaran berikutnya mencobanya lagi — memenuhi PRD § 6.13 "kegagalan
@@ -159,18 +166,30 @@ function body(r: DueReminder) {
 export async function sendDueReminders(): Promise<number> {
   if (!emailConfigured) return 0;
 
-  const claimed = await claimDueReminders();
+  const perPengguna = new Map<string, DueReminder[]>();
+  for (const r of await claimDueReminders()) {
+    const daftar = perPengguna.get(r.userId);
+    if (daftar) daftar.push(r);
+    else perPengguna.set(r.userId, [r]);
+  }
+
   let sent = 0;
-  for (const r of claimed) {
+  for (const daftar of perPengguna.values()) {
+    const satu = daftar[0];
     const ok = await sendMail({
-      to: r.email,
-      subject: `${LABEL[r.type]}: ${r.title}`,
-      heading: r.title,
-      bodyHtml: body(r),
-      userId: r.userId,
+      to: satu.email,
+      // Satu pengingat tetap memakai judulnya sendiri sebagai subjek: itu yang
+      // terbaca di daftar inbox tanpa membuka isinya.
+      subject:
+        daftar.length === 1
+          ? `${LABEL[satu.type]}: ${satu.title}`
+          : `${daftar.length} pengingat menunggu`,
+      heading: daftar.length === 1 ? satu.title : 'Pengingat untuk Anda',
+      bodyHtml: daftar.map(body).join(''),
+      userId: satu.userId,
     });
     if (ok) sent++;
-    else await releaseClaim(r.id);
+    else for (const r of daftar) await releaseClaim(r.id);
   }
   return sent;
 }
