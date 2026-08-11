@@ -218,10 +218,10 @@ export default function Login() {
                 tidak ikut terbaca sebagai bagian dari nama tautannya. */}
             <span aria-hidden="true"> · </span>
             <a
-              href={lang === 'en' ? '/case-study.html' : '/studi-kasus.html'}
+              href={lang === 'en' ? '/terms.html' : '/syarat.html'}
               className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
             >
-              {t('l.caseStudy')}
+              {t('l.terms')}
             </a>
           </p>
         </div>
