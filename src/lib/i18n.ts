@@ -294,6 +294,8 @@ const id: Dict = {
   // login
   'l.welcome': 'Selamat datang',
   'l.desc': 'Catat, lacak, dan menangkan setiap lamaran kerja dalam satu tempat yang tenang.',
+  'l.purpose':
+    'Masuk dengan akun Google untuk menyimpan lamaran, jadwal interview, dan dokumen CV Anda. Kami hanya memakai nama, email, dan foto profil dari akun Google Anda — tidak ada akses ke Gmail, kontak, kalender, atau Drive.',
   'l.google': 'Lanjutkan dengan Google',
   'l.guest': 'Masuk sebagai tamu',
   'l.local': 'Data tersimpan di akunmu dan bisa dibuka dari perangkat mana pun.',
@@ -582,6 +584,8 @@ const en: Dict = {
   'set.newTag': 'New tag name',
   'l.welcome': 'Welcome',
   'l.desc': 'Record, track and win every job application in one calm place.',
+  'l.purpose':
+    'Sign in with your Google account to save your applications, interview schedule, and CV documents. We only use your name, email, and profile photo from Google — no access to Gmail, contacts, calendar, or Drive.',
   'l.google': 'Continue with Google',
   'l.guest': 'Continue as guest',
   'l.local': 'Your data lives in your account and opens from any device.',
