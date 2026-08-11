@@ -214,6 +214,15 @@ export default function Login() {
             >
               {t('l.privacy')}
             </a>
+            {/* Pemisahnya di luar tautan supaya tidak ikut bergaris bawah dan
+                tidak ikut terbaca sebagai bagian dari nama tautannya. */}
+            <span aria-hidden="true"> · </span>
+            <a
+              href={lang === 'en' ? '/case-study.html' : '/studi-kasus.html'}
+              className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
+            >
+              {t('l.caseStudy')}
+            </a>
           </p>
         </div>
       </div>
