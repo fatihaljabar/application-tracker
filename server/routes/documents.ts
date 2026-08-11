@@ -8,7 +8,7 @@ import {
   type DocFile,
 } from '../../shared/types.ts';
 import { db } from '../db/client.ts';
-import { documents } from '../db/schema.ts';
+import { documents, reminders, settings } from '../db/schema.ts';
 import { ApiError } from '../lib/middleware.ts';
 import { deleteObject, headObjectSize, objectKeyFor, presignGet, presignPut } from '../lib/r2.ts';
 import { requireAuth } from '../lib/session.ts';
@@ -145,6 +145,7 @@ documentsRouter.post('/:id/confirm', async (req, res) => {
   }
 
   await db.update(documents).set({ state: 'ready', size: actual }).where(eq(documents.id, id));
+  await buatPengingatMasaBerlaku(userId, { ...row, state: 'ready' });
   res.json(toDocFile({ ...row, state: 'ready', size: actual }));
 });
 
@@ -188,6 +189,61 @@ documentsRouter.delete('/:id', async (req, res) => {
   if (!row) throw new ApiError(404, 'not_found', 'Dokumen tidak ditemukan.');
 
   await deleteObject(row.objectKey);
+  // Pengingat masa berlakunya ikut. Membiarkannya berarti mengingatkan
+  // pengguna memperbarui CV yang sudah tidak ada.
+  await db
+    .delete(reminders)
+    .where(and(eq(reminders.userId, userId), eq(reminders.autoKey, autoKeyCv(id))));
   await db.delete(documents).where(eq(documents.id, id));
   res.json({ id, deleted: true });
 });
+
+/** Penanda unik supaya satu dokumen tidak pernah punya dua pengingat. */
+const autoKeyCv = (documentId: string) => `cv:${documentId}`;
+
+/**
+ * Mengingatkan memperbarui CV setelah sekian hari (PRD § 6.6, tipe kelima).
+ *
+ * Masalah yang diselesaikan nyata dan disebut PRD § 2: orang mengirim CV yang
+ * sama berbulan-bulan tanpa sadar isinya sudah basi, lalu mengirimnya ke
+ * perusahaan impian.
+ *
+ * Hanya untuk kategori `cv`. Cover letter dan sertifikat tidak basi dengan cara
+ * yang sama — sertifikat justru tidak pernah perlu diperbarui.
+ *
+ * Jumlah harinya diambil dari pengaturan pengguna, bawaannya 90. Gagal membuat
+ * pengingat TIDAK boleh menjatuhkan unggahannya: berkasnya sudah sampai, dan
+ * pengingat yang hilang jauh lebih ringan daripada unggahan yang ditolak
+ * padahal berhasil.
+ */
+async function buatPengingatMasaBerlaku(
+  userId: string,
+  row: typeof documents.$inferSelect,
+): Promise<void> {
+  if (row.category !== 'cv') return;
+  try {
+    const [pref] = await db
+      .select({ hari: settings.cvValidDays })
+      .from(settings)
+      .where(eq(settings.userId, userId))
+      .limit(1);
+    const hari = pref?.hari ?? 90;
+    await db
+      .insert(reminders)
+      .values({
+        id: randomUUID(),
+        userId,
+        applicationId: null,
+        type: 'cv_validity',
+        title: `Perbarui ${row.label}`,
+        datetime: new Date(Date.now() + hari * 24 * 3600 * 1000),
+        notes: `Sudah ${hari} hari sejak berkas ini diunggah. Cek apakah isinya masih terbaru.`,
+        done: false,
+        autoKey: autoKeyCv(row.id),
+      })
+      // Konfirmasi ulang tidak boleh menghasilkan pengingat kedua.
+      .onDuplicateKeyUpdate({ set: { autoKey: autoKeyCv(row.id) } });
+  } catch (err) {
+    console.error('[dokumen] gagal membuat pengingat masa berlaku CV', row.id, err);
+  }
+}
