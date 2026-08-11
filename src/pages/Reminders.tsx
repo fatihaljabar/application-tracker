@@ -151,11 +151,19 @@ export default function Reminders() {
                   </p>
                 </div>
 
-                {/* group-focus-within: tanpa ini tombolnya tetap opacity-0 saat
-                    dijangkau papan ketik — pengguna keyboard memfokuskan sesuatu
-                    yang tidak terlihat sama sekali. Tampilan dengan tetikus tidak
-                    berubah: keduanya tetap muncul hanya saat kartunya disentuh. */}
-                <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                {/* Dua tambahan pada pola "muncul saat hover" yang sudah ada,
+                    keduanya soal KETERJANGKAUAN, bukan gaya:
+
+                    group-focus-within — tanpa ini pengguna papan ketik
+                    memfokuskan tombol yang tidak tergambar di layar.
+
+                    @media (hover: none) — Tailwind membungkus varian hover-nya
+                    dengan @media (hover: hover), jadi di layar sentuh aturannya
+                    TIDAK PERNAH berlaku dan tombolnya mustahil dijangkau. PRD § 9
+                    mensyaratkan setiap fitur bisa diselesaikan dari ponsel.
+
+                    Tampilan dengan tetikus tidak berubah sama sekali. */}
+                <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
                   <button type="button"
                     onClick={() => edit(r)}
                     aria-label={`${t('r.a11y.edit')}: ${r.title}`}
