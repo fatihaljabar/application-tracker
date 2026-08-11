@@ -145,6 +145,8 @@ interface Ctx {
   updateSettings: (patch: Partial<Settings>, done?: string) => void;
   signIn: (user: UserProfile) => void;
   signOut: () => void;
+  /** Hapus akun beserta seluruh isinya. Tidak bisa dibatalkan (PRD § 6.19). */
+  deleteAccount: (done?: string) => Promise<boolean>;
   resetData: (done?: string) => void;
 }
 
@@ -820,6 +822,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setDb(EMPTY);
         })();
       },
+
+      /**
+       * Menghapus akun. Setelah berhasil, seluruh state dikosongkan dan
+       * `user` jadi null — itu yang membuat Shell menampilkan halaman masuk,
+       * jadi tidak perlu memuat ulang halaman.
+       *
+       * Cookie sudah dibuang server, jadi tidak ada sesi tertinggal yang
+       * menunjuk pengguna yang tidak ada lagi.
+       */
+      deleteAccount: (done) =>
+        run(
+          () => del('/account'),
+          () => ({ ...EMPTY }),
+          done,
+        ),
 
       resetData: (done) => {
         void run(

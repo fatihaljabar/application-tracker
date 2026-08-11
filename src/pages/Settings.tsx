@@ -26,10 +26,11 @@ function Row({
 }
 
 export default function Settings() {
-  const { t, db, updateSettings, addTag, deleteTag, resetData, signOut, toast } = useStore();
+  const { t, db, updateSettings, addTag, deleteTag, resetData, signOut, toast, deleteAccount, saving } = useStore();
   const s = db.settings;
   const [tagDraft, setTagDraft] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const palette = ['#2f6f5e', '#5b7fa6', '#b58a52', '#a6708f', '#6f7fb5', '#8a72b0', '#b06565'];
 
   const save = (p: Parameters<typeof updateSettings>[0]) => {
@@ -193,6 +194,27 @@ export default function Settings() {
             )}
           </div>
 
+          {/* A4 — hapus akun (PRD § 6.19). Dipisah garis dari tombol di atas
+              karena ini satu-satunya aksi di halaman ini yang tidak bisa
+              dibatalkan, dan tidak boleh tertukar dengan "Hapus semua data"
+              yang masih menyisakan akunnya. */}
+          {db.user && (
+            <div className="mt-5 border-t border-[var(--line)] pt-5">
+              <p className="text-[12.5px] leading-relaxed text-[var(--ink-muted)]">
+                {t('set.deleteAccountWarn')}
+              </p>
+              <Button
+                className="mt-3"
+                variant="danger"
+                icon="fi-rr-trash"
+                disabled={saving}
+                onClick={() => setConfirmDelete(true)}
+              >
+                {t('set.deleteAccount')}
+              </Button>
+            </div>
+          )}
+
           {db.user && (
             <div className="mt-5 flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--accent-soft)] text-[14px] font-semibold text-[var(--accent-ink)]">
@@ -208,6 +230,22 @@ export default function Settings() {
           )}
         </section>
       </div>
+
+      <Confirm
+        open={confirmDelete}
+        title={t('set.deleteAccountConfirm')}
+        description={t('set.deleteAccountWarn')}
+        confirmLabel={t('set.deleteAccountYes')}
+        cancelLabel={t('c.cancel')}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          setConfirmDelete(false);
+          // Tidak perlu memuat ulang halaman: begitu berhasil, store
+          // mengosongkan state dan `user` jadi null, dan Shell menampilkan
+          // halaman masuk sendiri.
+          void deleteAccount(t('set.accountDeleted'));
+        }}
+      />
 
       <Confirm
         open={confirmReset}

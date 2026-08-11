@@ -67,6 +67,7 @@ const ENDPOINTS: [method: string, path: string][] = [
   ['POST', '/tags'],
   ['DELETE', '/tags/apa-saja'],
   ['PUT', '/settings'],
+  ['DELETE', '/account'],
 ];
 
 /**
