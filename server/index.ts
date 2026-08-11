@@ -9,6 +9,7 @@ import { emailConfigured } from './lib/email.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
 import { perIp, perUserOrIp, rateLimit } from './lib/ratelimit.ts';
+import { accountRouter } from './routes/account.ts';
 import { activitiesRouter } from './routes/activities.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
@@ -99,6 +100,7 @@ app.use('/api/bookmarks', bookmarksRouter);
 app.use('/api/wishes', wishesRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/account', accountRouter);
 // Sengaja tanpa sesi (PRD § 6.13) — penjaganya tanda tangan HMAC di tautannya.
 app.use('/api/unsubscribe', unsubscribeRouter);
 
