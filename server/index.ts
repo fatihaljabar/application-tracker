@@ -9,11 +9,13 @@ import { emailConfigured } from './lib/email.ts';
 import { env } from './lib/env.ts';
 import { ApiError, errorHandler, securityHeaders } from './lib/middleware.ts';
 import { perIp, perUserOrIp, rateLimit } from './lib/ratelimit.ts';
+import { accountRouter } from './routes/account.ts';
 import { activitiesRouter } from './routes/activities.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
 import { bookmarksRouter } from './routes/bookmarks.ts';
 import { documentsRouter } from './routes/documents.ts';
+import { exportRouter } from './routes/export.ts';
 import { notesRouter } from './routes/notes.ts';
 import { remindersRouter } from './routes/reminders.ts';
 import { settingsRouter } from './routes/settings.ts';
@@ -38,6 +40,19 @@ const healthLimit = rateLimit({
   windowMs: 60_000,
   key: perIp,
   message: 'Terlalu sering. Coba lagi sebentar.',
+});
+/**
+ * Ekspor menjalankan sekitar sepuluh query dan bisa mengembalikan ratusan
+ * kilobyte. Pembatas tulis melewati GET, jadi tanpa ini satu-satunya rem adalah
+ * kesabaran pemiliknya sendiri — dan pool cuma 5 koneksi di hosting bersama.
+ * Enam per menit jauh di atas kebutuhan siapa pun yang benar-benar mengunduh
+ * datanya.
+ */
+const exportLimit = rateLimit({
+  max: 6,
+  windowMs: 60_000,
+  key: perUserOrIp,
+  message: 'Terlalu sering mengekspor. Tunggu sebentar, lalu coba lagi.',
 });
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 
@@ -99,6 +114,8 @@ app.use('/api/bookmarks', bookmarksRouter);
 app.use('/api/wishes', wishesRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/account', accountRouter);
+app.use('/api/export', exportLimit, exportRouter);
 // Sengaja tanpa sesi (PRD § 6.13) — penjaganya tanda tangan HMAC di tautannya.
 app.use('/api/unsubscribe', unsubscribeRouter);
 

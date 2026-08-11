@@ -124,12 +124,3 @@ export function initials(text: string) {
     .join('');
 }
 
-export function downloadJSON(data: unknown, name: string) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-}

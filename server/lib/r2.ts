@@ -111,6 +111,48 @@ export async function headObjectSize(key: string): Promise<number | null> {
  * dan 404 sudah memenuhinya. Menganggapnya galat justru membuat baris database
  * mustahil dihapus setelah objeknya lenyap karena sebab lain.
  */
+/**
+ * Menghapus SELURUH berkas milik satu pengguna, dipakai saat akun dihapus
+ * (PRD § 6.19: "termasuk berkas dokumennya").
+ *
+ * Menyapu berdasarkan prefix, bukan berdasarkan baris di tabel `documents`.
+ * Bedanya penting: baris `pending` yang objeknya sudah terunggah tapi belum
+ * dikonfirmasi tetap terbawa, begitu juga objek yatim dari kegagalan lama.
+ * Menghapus akun harus benar-benar tidak menyisakan apa pun — kalau lewat
+ * tabel, yang tertinggal tidak akan pernah bisa ditemukan lagi karena
+ * pemiliknya sudah hilang.
+ *
+ * Mengembalikan jumlah objek yang dihapus.
+ */
+export async function deleteUserObjects(userId: string): Promise<number> {
+  if (!configured) return 0;
+  const prefix = `docs/${userId}/`;
+  const base = `https://${env.r2.accountId}.r2.cloudflarestorage.com/${env.r2.bucket}`;
+  let dihapus = 0;
+
+  // Dilakukan berulang: satu daftar mengembalikan maksimal 1000 kunci, dan
+  // kuota 50 dokumen per pengguna membuat satu putaran hampir selalu cukup —
+  // tapi objek yatim tidak dibatasi kuota.
+  for (let putaran = 0; putaran < 20; putaran++) {
+    const res = await aws().fetch(
+      `${base}?list-type=2&prefix=${encodeURIComponent(prefix)}&max-keys=1000`,
+    );
+    if (!res.ok) {
+      throw new ApiError(502, 'storage_error', 'Penyimpanan dokumen tidak merespons.');
+    }
+    const keys = [...(await res.text()).matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) => m[1]);
+    if (keys.length === 0) break;
+    for (const key of keys) {
+      // Kunci dari R2 sendiri, tapi tetap dipastikan berada di bawah prefix
+      // pengguna ini — penghapusan massal tidak boleh bisa melebar.
+      if (!key.startsWith(prefix)) continue;
+      await deleteObject(key);
+      dihapus++;
+    }
+  }
+  return dihapus;
+}
+
 export async function deleteObject(key: string): Promise<void> {
   const res = await aws().fetch(objectUrl(key), { method: 'DELETE' });
   if (!res.ok && res.status !== 404) {

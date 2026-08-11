@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP yang berlaku sesungguhnya; header ditimpa LiteSpeed. Halaman ini
+         statis dan tanpa skrip, jadi kebijakannya lebih ketat daripada aplikasi:
+         tidak ada script-src sama sekali. Google Fonts tetap diizinkan karena
+         halaman ini memuat hurufnya dari sana — tanpa itu tipografinya diam-diam
+         jatuh ke huruf bawaan sistem, dan tidak ada galat yang memberi tahu. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Privacy Policy — Job Tracker</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Berkas statis, sengaja tidak memakai React: halaman ini harus bisa dibuka
+         tanpa masuk, dan tidak boleh ikut rusak kalau aplikasinya bermasalah.
+         Warna dan huruf disalin dari src/index.css supaya terlihat satu keluarga. */
+      :root {
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --line: #e6e3dd;
+        --ink: #23211d;
+        --ink-soft: #57534a;
+        --ink-muted: #8d887d;
+        --accent: #2f6f5e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16171a;
+          --surface: #1e2024;
+          --line: #2e3137;
+          --ink: #eceae5;
+          --ink-soft: #b6b2aa;
+          --ink-muted: #8d887d;
+          --accent: #6aa892;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -0.03em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        letter-spacing: -0.015em;
+        margin: 40px 0 10px;
+      }
+      p, li { color: var(--ink-soft); }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 6px; }
+      strong { color: var(--ink); font-weight: 600; }
+      a { color: var(--accent); }
+      .tanggal { color: var(--ink-muted); font-size: 13px; margin: 0 0 32px; }
+      .kotak {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin: 24px 0;
+      }
+      .kotak p:first-child { margin-top: 0; }
+      .kotak p:last-child { margin-bottom: 0; }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy Policy</h1>
+      <p class="tanggal">Job Tracker · effective 8 August 2026</p>
+
+      <p>
+        This application stores your list of job applications. That list is often sensitive —
+        the companies you are applying to may be something you would rather your current
+        employer did not know. This page explains what is stored, who can see it, and what is
+        not done with it.
+      </p>
+
+      <h2>What is stored</h2>
+      <p>From your Google account, when you first sign in:</p>
+      <ul>
+        <li>Your name and email address</li>
+        <li>The address of your profile picture</li>
+        <li>Your Google account identifier</li>
+        <li>When you signed up, and when you last opened the app</li>
+      </ul>
+      <p>
+        <strong>Your Google password never passes through this application.</strong> Signing
+        in is handled by Google, and all this app receives is the information above.
+      </p>
+      <p>And everything you type yourself:</p>
+      <ul>
+        <li>Applications — company, role, location, salary, links, dates, notes, tags</li>
+        <li>Any recruiter contact details you fill in</li>
+        <li>Activities, reminders, interview notes, bookmarks, wishlist</li>
+        <li>Your app settings</li>
+      </ul>
+      <p>
+        <strong>Documents you upload</strong> — CVs, cover letters, certificates and other
+        files — are stored in Cloudflare R2 file storage, not on the application server. The
+        bucket is closed: files cannot be opened through an ordinary link, and every download
+        uses a signed link that is valid for five minutes and is only issued after the server
+        has confirmed the file is yours.
+      </p>
+
+      <h2>Who can see it</h2>
+      <div class="kotak">
+        <p>
+          <strong>Other users cannot see your data.</strong> Every request to the server is
+          filtered by your session, and that rule is held in place by automated tests that
+          try to reach another user's data on every route and check that all of them are
+          refused.
+        </p>
+        <p>
+          <strong>The person who runs this app can.</strong> It is run single-handedly, and
+          he has access to the database — as the owner of any server does. Your data is not
+          read for any purpose other than operating and fixing the service, and it is never
+          sold or shared.
+        </p>
+      </div>
+
+      <h2>Cookies</h2>
+      <p>
+        One cookie, named <code>sid</code>, holds a signed session marker. Its only job is to
+        keep you signed in. It lasts 30 days, cannot be read by JavaScript, and is
+        <strong>not used to track you</strong> on any site.
+      </p>
+      <p>No advertising cookies, no analytics cookies.</p>
+      <p>
+        <strong>Something you should know:</strong> an existing session cannot yet be cut off
+        from the server. If you lose your device, the session on it stays valid until the 30
+        days run out or you sign out on that device. Signing out only ends the session on the
+        device you are using at the time. This is a known limitation and a fix is planned.
+      </p>
+
+      <h2>Third parties</h2>
+      <p>
+        No analytics service, no trackers, no advertising. The following receive your IP
+        address because your browser loads files from them:
+      </p>
+      <ul>
+        <li><strong>Google</strong> — signing in, and the typeface from Google Fonts</li>
+        <li><strong>Flaticon</strong> — icons</li>
+        <li><strong>Hostinger</strong> — where the app and its database run</li>
+      </ul>
+      <p>And two more that hold the contents of your data, not merely your IP address:</p>
+      <ul>
+        <li>
+          <strong>Cloudflare R2</strong> — stores the document files you upload. The contents
+          of your CV are there
+        </li>
+        <li>
+          <strong>Resend</strong> — sends the reminder emails. It receives the destination
+          address and the contents of the reminder, including any company names inside it
+        </li>
+      </ul>
+      <p>
+        Both are used purely to operate this service, not for advertising or analytics.
+      </p>
+      <p>
+        <strong>Your data may sit outside Indonesia.</strong> Cloudflare and Resend run their
+        infrastructure in many countries, and your reminder email passes through a server in
+        East Asia. If that matters to you, it is better known before you upload a document
+        than after.
+      </p>
+
+      <h2>Email from us</h2>
+      <p>
+        This app sends reminder emails and a morning digest. Both can be switched off
+        separately under <strong>Settings &rarr; Notifications</strong>, and every email
+        carries an unsubscribe link in its footer that works without signing in. Stopping the
+        emails does not delete your account or your data.
+      </p>
+      <p>There are no promotional emails. The only things sent are reminders you created.</p>
+
+      <h2>Deleting your data</h2>
+      <p>
+        Open <strong>Settings &rarr; Account &amp; Data &rarr; Delete account</strong>. Every
+        application, document, reminder and note is removed from the database, and your files
+        are removed from storage. This <strong>cannot be undone</strong>.
+      </p>
+      <p>
+        Signing in again afterwards with the same Google account gives you a new, empty
+        account — not your old data.
+      </p>
+      <p>
+        On the same page there is an <strong>Export data</strong> button to download
+        everything in your account as a single file, at any time, before deleting it.
+      </p>
+      <p>
+        Accounts not opened for 24 months are deleted, after a warning is sent to your email
+        address first.
+      </p>
+
+      <h2>Changes to this page</h2>
+      <p>
+        If this policy changes, the date at the top changes with it. This app is still
+        growing; new features that change what is stored will be reflected here.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        <a href="mailto:fatihaljabar@gmail.com">fatihaljabar@gmail.com</a>
+      </p>
+      <p>
+        Write from the email address you sign in with, so the request can be matched to your
+        account.
+      </p>
+
+      <footer>
+        The source code for this app is open:
+        <a href="https://github.com/fatihaljabar/application-tracker">github.com/fatihaljabar/application-tracker</a>
+        · <a href="/">back to the app</a>
+      </footer>
+    </main>
+  </body>
+</html>
