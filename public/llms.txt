@@ -1,0 +1,35 @@
+# Tracking Lamaran
+
+> Pelacak lamaran kerja gratis dan tanpa iklan untuk pencari kerja di Indonesia — mencatat setiap lamaran, tahap seleksi, jadwal interview, dan dokumen CV dalam satu tempat.
+
+Tracking Lamaran (nama Inggris: Job Tracker) membantu pencari kerja mencatat dan
+melacak lamaran pekerjaan dari niat melamar sampai diterima. Masuk hanya dengan
+akun Google, tanpa kata sandi. Data tersimpan di server milik pembuatnya
+sendiri, tidak dijual dan tidak dibagikan ke pihak ketiga.
+
+## Fitur utama
+
+- Papan kanban 11 tahap: dari wishlist sampai diterima atau ditolak, dengan seret-lepas maupun tanpa itu
+- Pengingat otomatis untuk interview, technical test, follow-up, dan tenggat lowongan
+- Penyimpanan dokumen (CV, cover letter, portofolio) dengan riwayat versi per grup
+- Statistik: persentase lolos tiap tahap, sumber lowongan paling responsif, rata-rata waktu balasan
+- Ekspor seluruh data kapan saja; tidak ada impor data dari pihak lain
+
+## Data pengguna
+
+Aplikasi ini hanya meminta nama, alamat email, dan foto profil dari akun
+Google pengguna saat masuk. Tidak ada akses ke email, kontak, kalender, atau
+Drive. Tidak ada pelacak pihak ketiga (tanpa Google Analytics, tanpa piksel
+iklan).
+
+## Halaman
+
+- [Aplikasi](https://trackinglamaran.site/): halaman masuk
+- [Kebijakan Privasi — Bahasa Indonesia](https://trackinglamaran.site/privasi.html)
+- [Privacy Policy — English](https://trackinglamaran.site/privacy.html)
+- [Syarat & Ketentuan — Bahasa Indonesia](https://trackinglamaran.site/syarat.html)
+- [Terms of Service — English](https://trackinglamaran.site/terms.html)
+
+## Lainnya
+
+Kode sumber terbuka: https://github.com/fatihaljabar/application-tracker
