@@ -41,6 +41,19 @@ const healthLimit = rateLimit({
   key: perIp,
   message: 'Terlalu sering. Coba lagi sebentar.',
 });
+/**
+ * Ekspor menjalankan sekitar sepuluh query dan bisa mengembalikan ratusan
+ * kilobyte. Pembatas tulis melewati GET, jadi tanpa ini satu-satunya rem adalah
+ * kesabaran pemiliknya sendiri — dan pool cuma 5 koneksi di hosting bersama.
+ * Enam per menit jauh di atas kebutuhan siapa pun yang benar-benar mengunduh
+ * datanya.
+ */
+const exportLimit = rateLimit({
+  max: 6,
+  windowMs: 60_000,
+  key: perUserOrIp,
+  message: 'Terlalu sering mengekspor. Tunggu sebentar, lalu coba lagi.',
+});
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 
 app.disable('x-powered-by');
@@ -102,7 +115,7 @@ app.use('/api/wishes', wishesRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/account', accountRouter);
-app.use('/api/export', exportRouter);
+app.use('/api/export', exportLimit, exportRouter);
 // Sengaja tanpa sesi (PRD § 6.13) — penjaganya tanda tangan HMAC di tautannya.
 app.use('/api/unsubscribe', unsubscribeRouter);
 

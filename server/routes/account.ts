@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '../db/client.ts';
-import { users } from '../db/schema.ts';
-import { deleteUserObjects } from '../lib/r2.ts';
+import { documents, users } from '../db/schema.ts';
+import { ApiError } from '../lib/middleware.ts';
+import { deleteUserObjects, r2Configured } from '../lib/r2.ts';
 import { clearSession, requireAuth } from '../lib/session.ts';
 
 export const accountRouter = Router();
@@ -29,6 +30,32 @@ accountRouter.use(requireAuth);
  */
 accountRouter.delete('/', async (req, res) => {
   const userId = req.userId as string;
+
+  /**
+   * Kalau penyimpanan tidak aktif, penghapusan DIBATALKAN — tidak dikerjakan
+   * separuh.
+   *
+   * `deleteUserObjects` mengembalikan 0 saat R2 tidak dikonfigurasi, dan tanpa
+   * penjaga ini akunnya tetap terhapus sementara berkasnya tertinggal di R2
+   * selamanya. Lebih buruk lagi: begitu barisnya hilang, tidak ada lagi yang
+   * tahu berkas itu milik siapa, jadi tidak akan pernah bisa dibersihkan.
+   *
+   * "Hapus akun" berjanji tidak menyisakan apa pun di mana pun. Menolak dengan
+   * jujur lebih baik daripada memenuhi setengahnya lalu mengaku selesai.
+   */
+  if (!r2Configured) {
+    const [{ n }] = await db
+      .select({ n: count() })
+      .from(documents)
+      .where(eq(documents.userId, userId));
+    if (n > 0) {
+      throw new ApiError(
+        503,
+        'storage_unavailable',
+        'Penyimpanan dokumen sedang tidak aktif, jadi berkasmu belum bisa ikut dihapus. Akun tidak jadi dihapus supaya tidak ada yang tertinggal. Coba lagi nanti.',
+      );
+    }
+  }
 
   const berkasDihapus = await deleteUserObjects(userId);
   await db.delete(users).where(eq(users.id, userId));
