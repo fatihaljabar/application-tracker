@@ -121,6 +121,12 @@ const now = () => new Date().toISOString();
 
 const userA = { id: randomUUID(), email: 'a@isolation.test', cookie: '' };
 const userB = { id: randomUUID(), email: 'b@isolation.test', cookie: '' };
+/**
+ * Sekali pakai, dibuat di dalam kasusnya sendiri: satu-satunya cara menguji
+ * DELETE /account adalah benar-benar menghapus sebuah akun, dan menghapus A
+ * atau B akan mencabut patokan yang dipakai seluruh berkas ini.
+ */
+const userC = { id: randomUUID(), email: 'c@isolation.test', cookie: '' };
 
 /** Milik A. Semuanya dibuat lewat API, jadi jalur suksesnya ikut terbukti. */
 const owned = {
@@ -269,20 +275,23 @@ describe('isolasi data antar pengguna', () => {
 
   after(async () => {
     // Menghapus pengguna membuang seluruh datanya lewat ON DELETE CASCADE.
-    await db.delete(users).where(inArray(users.id, [userA.id, userB.id]));
+    // C ikut di sini walau kasusnya sendiri sudah menghapusnya: kalau kasus itu
+    // gagal di tengah, barisnya tidak boleh tertinggal di database.
+    const semua = [userA.id, userB.id, userC.id];
+    await db.delete(users).where(inArray(users.id, semua));
 
     for (const table of OWNED_TABLES) {
       const [rows] = await db.$client.query(
-        `SELECT COUNT(*) AS n FROM \`${table}\` WHERE user_id IN (?, ?)`,
-        [userA.id, userB.id],
+        `SELECT COUNT(*) AS n FROM \`${table}\` WHERE user_id IN (?, ?, ?)`,
+        semua,
       );
       const n = (rows as { n: number }[])[0]?.n;
       assert.equal(Number(n), 0, `data uji masih tertinggal di tabel ${table}`);
     }
-    const [rows] = await db.$client.query('SELECT COUNT(*) AS n FROM users WHERE id IN (?, ?)', [
-      userA.id,
-      userB.id,
-    ]);
+    const [rows] = await db.$client.query(
+      'SELECT COUNT(*) AS n FROM users WHERE id IN (?, ?, ?)',
+      semua,
+    );
     assert.equal(Number((rows as { n: number }[])[0]?.n), 0, 'pengguna uji masih ada di database');
 
     server.kill();
@@ -548,6 +557,42 @@ describe('isolasi data antar pengguna', () => {
     assert.ok(body.activities.length >= 2, 'aktivitas A ikut terhapus oleh reset B');
   });
 
+  /**
+   * Ekspor memang memanggil `buildState` yang sama dengan GET /state, dan itu
+   * sudah diuji di atas — tapi "berbagi fungsi" persis yang berhenti benar di
+   * hari seseorang menambahkan satu field ke ekspor saja. Berkas ini menguji
+   * endpoint, bukan implementasi di baliknya.
+   */
+  it('ekspor B tidak memuat apa pun milik A', async () => {
+    const punyaA = await call<DB & { exportedAt: string }>(userA.cookie, 'GET', '/export');
+    assert.equal(punyaA.status, 200);
+    // Pembuktian bahwa rutenya hidup — tanpa ini, ekspor yang selalu kosong
+    // akan membuat kasus di bawah lulus tanpa arti.
+    assert.equal(punyaA.body.apps.length, 1, 'ekspor A tidak memuat lamarannya sendiri');
+    assert.ok(punyaA.body.exportedAt, 'ekspor tidak mencantumkan waktu');
+
+    const punyaB = await call<DB>(userB.cookie, 'GET', '/export');
+    assert.equal(punyaB.status, 200);
+    assert.deepEqual(
+      {
+        apps: punyaB.body.apps.length,
+        reminders: punyaB.body.reminders.length,
+        notes: punyaB.body.notes.length,
+        bookmarks: punyaB.body.bookmarks.length,
+        wishes: punyaB.body.wishes.length,
+        docs: punyaB.body.docs.length,
+      },
+      { apps: 0, reminders: 0, notes: 0, bookmarks: 0, wishes: 0, docs: 0 },
+      'ekspor B memuat data milik A',
+    );
+    // Dicari juga sebagai teks mentah: sebuah field yang lupa disaring akan
+    // membawa nama perusahaannya walau hitungan di atas tetap nol.
+    assert.ok(
+      !JSON.stringify(punyaB.body).includes('PT Rahasia A'),
+      'nama perusahaan A muncul di ekspor B',
+    );
+  });
+
   it('A masih bisa mengubah dan menghapus datanya sendiri', async () => {
     // Tanpa bagian ini, seluruh 404 di atas juga akan muncul dari endpoint
     // yang rusak total — dan tesnya tetap hijau.
@@ -607,5 +652,82 @@ describe('isolasi data antar pengguna', () => {
     ] as [string, string][]) {
       assert.equal((await call(userA.cookie, method, path)).status, 200, `${method} ${path}`);
     }
+  });
+
+  /**
+   * DELETE /account adalah endpoint paling merusak di aplikasi ini, dan sampai
+   * kasus ini ditulis ia tidak pernah sekali pun dijalankan dengan sesi yang
+   * sah — sapuan tanpa sesi di atas hanya membuktikan ia menjawab 401.
+   *
+   * Dipakai pengguna ketiga, karena membuktikan penghapusan menuntut sebuah
+   * akun yang benar-benar hilang, sementara A dan B adalah patokan yang
+   * dipakai seluruh berkas ini.
+   */
+  it('C menghapus akunnya sendiri; datanya hilang seluruhnya, A dan B utuh', async () => {
+    await createUser(userC);
+    const appC = randomUUID();
+    const bookmarkC = randomUUID();
+
+    // Data nyata dulu — menghapus akun kosong tidak membuktikan cascade-nya.
+    assert.equal(
+      (
+        await call(userC.cookie, 'POST', '/applications', {
+          ...appPayload(appC),
+          company: 'PT Rahasia C',
+          activity: activityPayload(randomUUID()),
+        })
+      ).status,
+      201,
+    );
+    assert.equal(
+      (
+        await call(userC.cookie, 'PUT', `/bookmarks/${bookmarkC}`, {
+          id: bookmarkC,
+          company: 'PT Rahasia C',
+          position: 'Backend Engineer',
+          savedAt: now(),
+        })
+      ).status,
+      201,
+    );
+
+    // Sengaja TANPA dokumen. Tanpa kredensial R2, penghapusan akun menolak bila
+    // pengguna punya berkas — jalur yang benar, tapi hasilnya jadi bergantung
+    // pada isi .env dan kasus ini akan berubah arti di mesin yang berbeda.
+    const hapus = await call<{ deleted: boolean }>(userC.cookie, 'DELETE', '/account');
+    assert.equal(hapus.status, 200, 'C tidak bisa menghapus akunnya sendiri');
+    assert.equal(hapus.body.deleted, true);
+
+    // Seluruh tabel, bukan cuma `users`. Janjinya "tidak menyisakan apa pun".
+    for (const table of OWNED_TABLES) {
+      const [rows] = await db.$client.query(
+        `SELECT COUNT(*) AS n FROM \`${table}\` WHERE user_id = ?`,
+        [userC.id],
+      );
+      assert.equal(Number((rows as { n: number }[])[0]?.n), 0, `baris C tertinggal di ${table}`);
+    }
+    const [barisUser] = await db.$client.query('SELECT COUNT(*) AS n FROM users WHERE id = ?', [
+      userC.id,
+    ]);
+    assert.equal(Number((barisUser as { n: number }[])[0]?.n), 0, 'baris users milik C tertinggal');
+
+    // Cookie-nya masih bertanda tangan sah, dan tetap harus ditolak — kalau
+    // tidak, sesi yang akunnya sudah tidak ada masih bisa dipakai.
+    assert.equal(
+      (await call(userC.cookie, 'GET', '/state')).status,
+      401,
+      'sesi C masih diterima setelah akunnya dihapus',
+    );
+
+    // Dan yang paling penting: tetangganya tidak ikut terbawa.
+    const [ab] = await db.$client.query('SELECT COUNT(*) AS n FROM users WHERE id IN (?, ?)', [
+      userA.id,
+      userB.id,
+    ]);
+    assert.equal(
+      Number((ab as { n: number }[])[0]?.n),
+      2,
+      'menghapus akun C ikut menghapus akun lain',
+    );
   });
 });
