@@ -52,9 +52,15 @@ const iso = (d: Date | null | undefined) => (d ? new Date(d).toISOString() : '')
  */
 const dateOnly = (d: string | null) => d ?? '';
 
-stateRouter.get('/', requireAuth, async (req, res) => {
-  const userId = req.userId as string;
-
+/**
+ * Menyusun seluruh data satu pengguna.
+ *
+ * Dipakai dua kali: oleh GET /state saat aplikasi dimuat, dan oleh GET /export
+ * saat pengguna mengunduh datanya (PRD § 6.19). Sengaja satu fungsi — ekspor
+ * yang bentuknya berbeda dari yang dipakai aplikasi akan pelan-pelan menyimpang,
+ * dan yang menemukannya adalah orang yang datanya sudah telanjur salah.
+ */
+export async function buildState(userId: string): Promise<DB> {
   const [userRow] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!userRow) throw new ApiError(401, 'unauthenticated', 'Sesi berakhir. Silakan masuk lagi.');
 
@@ -267,7 +273,11 @@ stateRouter.get('/', requireAuth, async (req, res) => {
     },
   };
 
-  res.json(payload);
+  return payload;
+}
+
+stateRouter.get('/', requireAuth, async (req, res) => {
+  res.json(await buildState(req.userId as string));
 });
 
 function initials(name: string) {

@@ -15,6 +15,7 @@ import { applicationsRouter } from './routes/applications.ts';
 import { authRouter } from './routes/auth.ts';
 import { bookmarksRouter } from './routes/bookmarks.ts';
 import { documentsRouter } from './routes/documents.ts';
+import { exportRouter } from './routes/export.ts';
 import { notesRouter } from './routes/notes.ts';
 import { remindersRouter } from './routes/reminders.ts';
 import { settingsRouter } from './routes/settings.ts';
@@ -101,6 +102,7 @@ app.use('/api/wishes', wishesRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/account', accountRouter);
+app.use('/api/export', exportRouter);
 // Sengaja tanpa sesi (PRD § 6.13) — penjaganya tanda tangan HMAC di tautannya.
 app.use('/api/unsubscribe', unsubscribeRouter);
 
