@@ -35,30 +35,20 @@ import { sendDueReminders } from './jobs/reminders.ts';
  * lokalnya sedang 07, jadi zona yang ditulis tetap akan berhenti memenuhi
  * syarat itu satu jam kemudian — dan seluruh berkas ini lulus tanpa rangkuman
  * pernah berjalan sekali pun. Persis itu yang terjadi saat berkas ini ditulis.
+ *
+ * Dipilih dari `Etc/GMT±N`, bukan dari daftar kota. Daftar kota versi pertama
+ * bolong: waktu musim panas menggeser beberapa zona sehingga pada jam UTC
+ * tertentu TIDAK ADA satu pun yang jam lokalnya 07, `TZ` jadi string kosong,
+ * dan seluruh berkas gagal — bukan karena kodenya salah, tapi karena jam berapa
+ * tesnya kebetulan dijalankan. `Etc/GMT±N` menutup setiap offset bulat dan
+ * tidak pernah mengenal DST, jadi selalu ada tepat satu yang cocok.
+ *
+ * Perhatikan tandanya terbalik menurut POSIX: `Etc/GMT+1` berarti UTC-1.
  */
-const ZONA = [
-  'Pacific/Kiritimati',
-  'Pacific/Auckland',
-  'Australia/Brisbane',
-  'Asia/Tokyo',
-  'Asia/Shanghai',
-  'Asia/Jakarta',
-  'Asia/Dhaka',
-  'Asia/Karachi',
-  'Asia/Dubai',
-  'Europe/Moscow',
-  'Europe/Paris',
-  'Europe/London',
-  'Atlantic/Azores',
-  'America/Sao_Paulo',
-  'America/Halifax',
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'America/Anchorage',
-  'Pacific/Honolulu',
-];
+const ZONA = Array.from({ length: 27 }, (_, i) => {
+  const o = i - 14;
+  return `Etc/GMT${o >= 0 ? '+' : ''}${o}`;
+});
 const jamDi = (z: string) =>
   Number(
     new Intl.DateTimeFormat('en-CA', { timeZone: z, hour: '2-digit', hour12: false }).format(

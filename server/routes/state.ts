@@ -27,6 +27,7 @@ import {
   wishes,
 } from '../db/schema.ts';
 import { ApiError } from '../lib/middleware.ts';
+import { deleteUserFilesOrRefuse } from '../lib/r2.ts';
 import { requireAuth } from '../lib/session.ts';
 
 export const stateRouter = Router();
@@ -299,6 +300,18 @@ function initials(name: string) {
  */
 stateRouter.delete('/', requireAuth, async (req, res) => {
   const userId = req.userId as string;
+
+  /**
+   * Berkas dulu, baru baris — di LUAR transaksi, karena R2 tidak ikut rollback.
+   *
+   * Sebelumnya baris `documents` dihapus di bawah tanpa satu pun sentuhan ke
+   * R2. Objeknya tertinggal selamanya, dan begitu barisnya hilang tidak ada
+   * lagi yang tahu berkas itu milik siapa. Lebih buruk: hapus akun memutuskan
+   * boleh-tidaknya melanjutkan dengan MENGHITUNG baris `documents`, jadi sekali
+   * reset dijalankan hitungannya nol, penjaganya lolos, dan berkasnya jadi
+   * sampah tanpa pemilik — persis hasil yang penjaga itu ada untuk mencegahnya.
+   */
+  await deleteUserFilesOrRefuse(userId);
 
   await db.transaction(async (tx) => {
     // Aktivitas, reminder, riwayat status, dan catatan ikut terhapus lewat
