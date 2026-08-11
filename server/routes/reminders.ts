@@ -1,8 +1,10 @@
-import { and, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import { and, eq, like } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '../db/client.ts';
-import { applications, reminders } from '../db/schema.ts';
+import { applications, reminders, settings } from '../db/schema.ts';
 import { autoKeyFor, dismissFollowup } from '../jobs/followup.ts';
+import { autoKeyTurunan, judulTurunan, turunanUntuk } from '../lib/ahead.ts';
 import { ApiError } from '../lib/middleware.ts';
 import { requireAuth } from '../lib/session.ts';
 import { parse, reminderInput, uuid } from '../lib/validate.ts';
@@ -61,6 +63,48 @@ remindersRouter.put('/:id', async (req, res) => {
     await db.insert(reminders).values({ id, ...values });
   }
 
+  /**
+   * Pengingat turunan dibuat DI SINI, saat pengguna menyimpan jadwalnya —
+   * bukan lewat tugas terjadwal (PRD § 6.6: "dibuat saat pengguna mengisi
+   * jadwal interview").
+   *
+   * Alasannya bukan kemudahan. Tugas terjadwal akan membuat ulang turunan yang
+   * sudah pengguna hapus, setiap kali ia berputar — persis masalah yang
+   * memaksa follow-up butuh kolom penanda sendiri. Dibuat sekali di sini, dan
+   * penghapusan pengguna bertahan karena tidak ada yang menjalankannya lagi.
+   *
+   * Turunan lama dibuang lebih dulu supaya mengubah jam interview memindahkan
+   * peringatannya juga. Tanpa itu, mengubah jadwal meninggalkan peringatan yang
+   * menunjuk waktu yang sudah tidak berlaku.
+   */
+  await db
+    .delete(reminders)
+    .where(and(eq(reminders.userId, userId), like(reminders.autoKey, `ahead:%:${id}`)));
+
+  if (!input.done) {
+    const [pref] = await db
+      .select({ timezone: settings.timezone })
+      .from(settings)
+      .where(eq(settings.userId, userId))
+      .limit(1);
+    const turunan = turunanUntuk(input.type, new Date(input.datetime), pref?.timezone ?? 'UTC');
+    if (turunan.length) {
+      await db.insert(reminders).values(
+        turunan.map((t) => ({
+          id: randomUUID(),
+          userId,
+          applicationId: input.appId,
+          type: input.type,
+          title: judulTurunan(t.kunci, input.title),
+          datetime: t.at,
+          notes: input.notes,
+          done: false,
+          autoKey: autoKeyTurunan(id, t.kunci),
+        })),
+      );
+    }
+  }
+
   res.status(existing ? 200 : 201).json({ id });
 });
 
@@ -86,6 +130,11 @@ remindersRouter.delete('/:id', async (req, res) => {
     await dismissFollowup(row.applicationId, userId);
   }
 
+  // Menghapus jadwalnya juga membuang peringatan turunannya. Membiarkannya
+  // berarti pengguna tetap diingatkan soal interview yang sudah ia batalkan.
+  await db
+    .delete(reminders)
+    .where(and(eq(reminders.userId, userId), like(reminders.autoKey, `ahead:%:${id}`)));
   await db.delete(reminders).where(eq(reminders.id, id));
   res.json({ id, deleted: true });
 });
