@@ -152,6 +152,27 @@ interface Ctx {
 
 const StoreCtx = createContext<Ctx | null>(null);
 
+/**
+ * Mengubah dataUrl hasil FileReader jadi Blob, TANPA `fetch`.
+ *
+ * `fetch(dataUrl)` tampak paling ringkas dan itulah yang dipakai sebelumnya —
+ * tapi peramban menggolongkannya sebagai koneksi, jadi ia tunduk pada
+ * `connect-src` di CSP. Begitu CSP dipasang, seluruh unggahan dokumen gagal di
+ * produksi dengan "TypeError: Failed to fetch", dan pesan itu tidak menyebut
+ * CSP sama sekali di layar.
+ *
+ * Melebarkan `connect-src` ke `data:` juga akan memperbaikinya, tapi ini string
+ * yang sudah ada di memori — memakai tumpukan jaringan untuk membacanya adalah
+ * kesalahannya sendiri. Cara ini tidak bergantung pada kebijakan apa pun.
+ */
+function dataUrlKeBlob(dataUrl: string, mime: string): Blob {
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+  const biner = atob(base64);
+  const bytes = new Uint8Array(biner.length);
+  for (let i = 0; i < biner.length; i++) bytes[i] = biner.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<DB>(EMPTY);
   const [ready, setReady] = useState(false);
@@ -675,10 +696,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                   note: doc.note,
                 },
               );
-              // dataUrl dari FileReader dikembalikan jadi Blob. Bukan jalur
-              // tercepat, tapi halaman Dokumen sudah membacanya begitu dan
-              // desainnya terkunci — 2 MB tidak sepadan dengan mengubah layar.
-              const blob = await (await fetch(doc.dataUrl as string)).blob();
+              const blob = dataUrlKeBlob(doc.dataUrl as string, doc.mime);
               await uploadFile(uploadUrl, blob, setUploadPercent);
               return await post<DocFile>(`/documents/${id}/confirm`);
             },
