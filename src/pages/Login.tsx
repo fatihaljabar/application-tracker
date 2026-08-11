@@ -110,33 +110,11 @@ export default function Login() {
 
       <div className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-14 px-6 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:px-10">
         <div className="anim-fade-up">
-          {/* Logo dan tautan hukum di satu baris, dengan justify-between: ini
-              posisi yang lazim dikenali sebagai "header" — dekat nama merek,
-              terlihat tanpa perlu menggulir, bukan catatan kaki di dasar kartu.
-              flex-wrap menjaga keduanya tetap terbaca di layar sempit, dengan
-              tautannya turun ke baris kedua alih-alih berdesakan. */}
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <div className="inline-flex items-center gap-2.5">
-              <img src="/logo.png" alt="" className="h-9 w-9 rounded-xl" />
-              <span className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                {t('appName')}
-              </span>
-            </div>
-            <p className="text-[12.5px] leading-relaxed text-[var(--ink-muted)]">
-              <a
-                href={lang === 'en' ? '/privacy.html' : '/privasi.html'}
-                className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
-              >
-                {t('l.privacy')}
-              </a>
-              <span aria-hidden="true"> · </span>
-              <a
-                href={lang === 'en' ? '/terms.html' : '/syarat.html'}
-                className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
-              >
-                {t('l.terms')}
-              </a>
-            </p>
+          <div className="inline-flex items-center gap-2.5">
+            <img src="/logo.png" alt="" className="h-9 w-9 rounded-xl" />
+            <span className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
+              {t('appName')}
+            </span>
           </div>
           <h1 className="mt-8 max-w-lg text-[38px] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--ink)] sm:text-[52px]">
             {t('l.welcome')}.<span className="block text-[var(--ink-muted)]">{t('tagline')}.</span>
@@ -221,6 +199,21 @@ export default function Login() {
 
           <p className="mt-7 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
             {t('l.local')}
+          </p>
+          <p className="mt-2 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
+            <a
+              href={lang === 'en' ? '/privacy.html' : '/privasi.html'}
+              className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
+            >
+              {t('l.privacy')}
+            </a>
+            <span aria-hidden="true"> · </span>
+            <a
+              href={lang === 'en' ? '/terms.html' : '/syarat.html'}
+              className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
+            >
+              {t('l.terms')}
+            </a>
           </p>
         </div>
       </div>
