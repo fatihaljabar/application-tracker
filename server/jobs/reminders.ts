@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte, sql } from 'drizzle-orm';
+import { and, eq, isNull, lte, or, sql } from 'drizzle-orm';
 import type { ReminderType } from '../../shared/types.ts';
 import { db } from '../db/client.ts';
 import { applications, reminders, settings } from '../db/schema.ts';
@@ -82,6 +82,12 @@ export async function claimDueReminders(): Promise<DueReminder[]> {
         // Pengguna yang mematikan notifikasi email tidak dikirimi apa pun.
         // Tautan berhenti berlangganan mematikan kolom yang sama ini.
         eq(settings.emailNotif, true),
+        // Lamaran yang diarsipkan sudah selesai bagi penggunanya — mengirimi
+        // dia pengingat soal itu sama saja mengabaikan keputusannya. Tugas
+        // follow-up sudah melewati arsip sejak awal; pengirim ini belum.
+        // Pengingat yang tidak terikat lamaran (applicationId NULL) tetap
+        // dikirim: tidak ada arsip yang bisa menyembunyikannya.
+        or(isNull(reminders.applicationId), eq(applications.archived, false)),
       ),
     )
     .limit(BATCH);

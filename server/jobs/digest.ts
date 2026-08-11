@@ -126,6 +126,7 @@ export async function sendDailyDigests(): Promise<number> {
         datetime: reminders.datetime,
       })
       .from(reminders)
+      .leftJoin(applications, eq(applications.id, reminders.applicationId))
       .where(
         and(
           eq(reminders.userId, u.userId),
@@ -133,6 +134,8 @@ export async function sendDailyDigests(): Promise<number> {
           isNull(reminders.sentAt),
           gte(reminders.datetime, mulai),
           lt(reminders.datetime, selesai),
+          // Lamaran arsip tidak muncul, sama seperti di pengirim pengingat.
+          or(isNull(reminders.applicationId), eq(applications.archived, false)),
         ),
       )
       .orderBy(asc(reminders.datetime))
@@ -154,12 +157,14 @@ export async function sendDailyDigests(): Promise<number> {
         sentAt: reminders.sentAt,
       })
       .from(reminders)
+      .leftJoin(applications, eq(applications.id, reminders.applicationId))
       .where(
         and(
           eq(reminders.userId, u.userId),
           eq(reminders.done, false),
           lt(reminders.datetime, mulai),
           gte(reminders.datetime, new Date(+mulai - 7 * 24 * 3600 * 1000)),
+          or(isNull(reminders.applicationId), eq(applications.archived, false)),
         ),
       )
       .orderBy(asc(reminders.datetime))
