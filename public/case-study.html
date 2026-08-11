@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- The policy that actually applies; the host overwrites the header. This
+         page is static and script-free, so it is stricter than the app itself:
+         no script-src at all. Identical to the privacy page. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Case Study — Job Tracker</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Static on purpose, no React: this page has to open without signing in,
+         and must not break along with the app. Colours and type are copied from
+         src/index.css so it reads as one family. */
+      :root {
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --line: #e6e3dd;
+        --ink: #23211d;
+        --ink-soft: #57534a;
+        --ink-muted: #8d887d;
+        --accent: #2f6f5e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16171a;
+          --surface: #1e2024;
+          --line: #2e3137;
+          --ink: #eceae5;
+          --ink-soft: #b6b2aa;
+          --ink-muted: #8d887d;
+          --accent: #6aa892;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -0.03em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        letter-spacing: -0.015em;
+        margin: 40px 0 10px;
+      }
+      h3 {
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        margin: 24px 0 6px;
+      }
+      p, li { color: var(--ink-soft); }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 6px; }
+      strong { color: var(--ink); font-weight: 600; }
+      a { color: var(--accent); }
+      .tanggal { color: var(--ink-muted); font-size: 13px; margin: 0 0 32px; }
+      .kotak {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin: 24px 0;
+      }
+      .kotak p:first-child { margin-top: 0; }
+      .kotak p:last-child { margin-bottom: 0; }
+      /* Headline numbers. Grid rather than a table: on a phone it drops to two
+         columns instead of scrolling sideways. */
+      .angka {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        margin: 24px 0;
+        padding: 0;
+        list-style: none;
+      }
+      .angka li {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin: 0;
+      }
+      .angka b {
+        display: block;
+        color: var(--ink);
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .angka span { font-size: 12.5px; color: var(--ink-muted); }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Case Study</h1>
+      <p class="tanggal">
+        Job Tracker · August 2026 · <a href="/studi-kasus.html">Bahasa Indonesia</a>
+      </p>
+
+      <p>
+        <strong>Job Tracker</strong> records job applications: free, ad-free, self-hosted. Built
+        by one person, from a static interface to a service other people rely on. This page
+        covers the decisions behind it and — the part people write up less often — the defects
+        that reached production, and how each one was finally caught.
+      </p>
+
+      <ul class="angka">
+        <li><b>88</b><span>pull requests</span></li>
+        <li><b>94</b><span>test cases</span></li>
+        <li><b>6</b><span>runtime dependencies</span></li>
+        <li><b>13</b><span>tables</span></li>
+      </ul>
+
+      <h2>The problem</h2>
+      <p>
+        An active job seeker can have dozens of applications running at once, each at its own
+        stage, with its own schedule, contacts and CV version. Without a tool the outcome is
+        always the same: forgetting where you already applied, missing an interview, never
+        knowing when following up is appropriate, and after three months being unable to answer
+        the question that matters most — which stage am I actually losing at?
+      </p>
+      <p>
+        A spreadsheet solves part of it, but it does not remind you, does not hold your
+        documents, and does not count anything.
+      </p>
+
+      <h2>Constraints chosen on purpose</h2>
+      <p>Most decisions here were decisions <strong>not</strong> to add something.</p>
+      <ul>
+        <li>
+          <strong>Six runtime dependencies.</strong> Express, cookie-parser, Drizzle, mysql2,
+          aws4fetch, zod. No animation library, no React icon library, no scheduler framework.
+          Every new package has to justify itself first.
+        </li>
+        <li>
+          <strong>One Node process</strong>, serving <code>/api/*</code> and the static files
+          together. No Docker, no Redis, no job queue, no staging environment.
+        </li>
+        <li>
+          <strong>No third-party trackers.</strong> No analytics, no ad pixels, no session
+          recorders. The contents are a list of companies someone is applying to — often while
+          still employed somewhere else.
+        </li>
+        <li>
+          <strong>No data import.</strong> Export is a way out, not a way back in. Import
+          demands validating foreign files and a write path that can corrupt existing data,
+          and not one user has asked for it.
+        </li>
+      </ul>
+
+      <div class="kotak">
+        <p>
+          <strong>Document files never pass through the Node process.</strong> The browser
+          uploads straight to object storage through a short-lived signed URL, and downloads
+          through a redirect to another one. That is why shared hosting with modest memory
+          never chokes on a 2 MB file.
+        </p>
+      </div>
+
+      <h2>The expensive defects</h2>
+      <p>
+        Every one of these <strong>passed type checking and linting in silence.</strong> The
+        types were right and the behaviour was wrong — which is exactly the class of defect
+        that is hardest to find.
+      </p>
+
+      <h3>A security policy blocked every document upload</h3>
+      <p>
+        A newly added content security policy broke every upload in production, and it surfaced
+        only through a user report. The cause was one harmless-looking line: turning a file
+        already read into memory into a binary object by way of a network request. Browsers
+        classify that as a connection, so the policy applied — and all the user saw was
+        <i>“failed”</i>, with nothing naming the cause.
+      </p>
+      <p>
+        <strong>Why it slipped through:</strong> uploads had been tested by calling the API
+        directly rather than through the page itself. Testing an endpoint is not testing a page.
+      </p>
+
+      <h3>One interview, two emails</h3>
+      <p>
+        The “interview tomorrow” reminder is scheduled for seven in the morning in the user's
+        own timezone. The daily digest goes out at seven as well. Both ran independently, so a
+        single interview produced two emails a minute apart carrying the same item.
+      </p>
+      <p>
+        No test caught it, because not one of them ran <strong>both</strong> jobs in the same
+        morning. It was proven by running both against a user whose local hour was seven, and
+        counting the emails that came out.
+      </p>
+
+      <h3>Deleting your data left the files behind</h3>
+      <p>
+        The “delete all data” button removed the database rows and never touched object storage.
+        The files stayed forever — and once the rows were gone, nothing knew whose files they
+        were, so nothing could ever clean them up.
+      </p>
+      <p>
+        Worse: account deletion decides whether it may proceed by <strong>counting those
+        rows</strong>. After a reset the count is zero, the guard passes, and the files become
+        unattributable garbage — precisely the outcome that guard exists to prevent.
+      </p>
+
+      <h3>Comparing against NULL always yields NULL</h3>
+      <p>
+        The daily digest claimed its work with a “not equal to today” comparison. A new user's
+        value is empty, and in SQL a comparison against an empty value is neither true nor
+        false. The result: <strong>the first digest for every user could never be sent</strong>
+        — permanently, with no error anywhere. The function returned zero, indistinguishable
+        from “nothing was due”.
+      </p>
+      <p>
+        It was found only by actually sending one. The earlier verification ran three queries
+        by hand and all three were correct — the claim standing in front of them was never run
+        at all.
+      </p>
+
+      <h3>Columns held UTC; the database's clock function returned local time</h3>
+      <p>
+        The application writes timestamps in UTC, while the database's built-in clock function
+        returns its own machine's local time — seven hours ahead. Comparing the two shifts
+        every threshold by that difference. A cleanup job briefly swept at seventeen hours
+        instead of twenty-four.
+      </p>
+
+      <h2>What those defects changed</h2>
+      <ul>
+        <li>
+          <strong>Nothing counts as done until it has been run.</strong> Anything touching the
+          screen is exercised in a browser with the controls actually clicked, not through an
+          API script.
+        </li>
+        <li>
+          <strong>A test must have been seen failing.</strong> A test that has never been red
+          has not tested anything. More than once a “passing” test turned out to be passing
+          over an empty array.
+        </li>
+        <li>
+          <strong>Tests seed through the same path the application uses.</strong> A test that
+          seeded through a different connection once passed over broken code twice, in opposite
+          directions — it was not testing the application, it was testing itself.
+        </li>
+        <li>
+          <strong>Check the thing that can actually break</strong>, not the nearest thing
+          that is easy to see. A security policy was once declared safe because the page “still
+          looked styled” — what got checked was the background colour, while what had broken
+          was the typeface.
+        </li>
+      </ul>
+
+      <h2>Security review</h2>
+      <p>
+        Once documents and notifications were finished, the whole of it was reviewed for
+        security before signups opened to the public. Five findings, all now closed: orphaned
+        files in storage, a sweeper that reported success while objects remained, the two most
+        destructive endpoints turning out never to have been exercised by any test, an
+        unsubscribe link an email scanner could press instead of the person, and a notification
+        address that could be pointed at someone else without their consent.
+      </p>
+      <div class="kotak">
+        <p>
+          <strong>Isolation between users is tested as a requirement, not a nicety.</strong>
+          One test file must be updated whenever an endpoint is added: two accounts are created,
+          then one tries to touch the other's data at every endpoint. An endpoint missing from
+          that file counts as unfinished.
+        </p>
+      </div>
+
+      <h2>Surprises from the production environment</h2>
+      <ul>
+        <li>
+          <strong>Production runs three Node processes</strong>, each with its own scheduler.
+          Every job that sends something therefore has to claim its work atomically before
+          acting — otherwise one event produces three emails.
+        </li>
+        <li>
+          <strong>The web server in front of Node overwrites security headers.</strong> The
+          policy that actually applies ended up declared inside the page rather than as a header.
+        </li>
+        <li>
+          <strong>File count grows faster than traffic does.</strong>
+        </li>
+      </ul>
+
+      <h2>Still open</h2>
+      <p>
+        Sessions cannot be revoked server-side: signing out only discards the cookie in the
+        browser, so a stolen session stays valid until it expires. That is admitted plainly on
+        the <a href="/privacy.html">privacy page</a>, along with the way out of it. Writing it
+        down felt more honest than staying quiet.
+      </p>
+
+      <footer>
+        <p>
+          Source is open on
+          <a href="https://github.com/fatihaljabar/application-tracker">GitHub</a> ·
+          <a href="/privacy.html">Privacy policy</a> ·
+          <a href="/">Open the app</a>
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
