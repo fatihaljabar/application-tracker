@@ -32,30 +32,57 @@ const safeUrl = z
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD');
 const emptyOr = <T extends z.ZodTypeAny>(s: T) => z.union([z.literal(''), s]);
 
-export const applicationInput = z.object({
-  id: uuid,
-  company: z.string().trim().min(1, 'Nama perusahaan wajib diisi').max(255),
-  position: z.string().trim().min(1, 'Posisi wajib diisi').max(255),
-  department: z.string().max(255).default(''),
-  location: z.string().max(255).default(''),
-  workType: z.enum(WORK_TYPE_VALUES),
-  jobType: z.enum(JOB_TYPE_VALUES),
-  salaryMin: z.number().int().min(0).max(2_000_000_000).nullable(),
-  salaryMax: z.number().int().min(0).max(2_000_000_000).nullable(),
-  source: z.string().max(64).default(''),
-  url: safeUrl.default(''),
-  appliedDate: emptyOr(dateOnly).default(''),
-  deadline: emptyOr(dateOnly).default(''),
-  recruiterName: z.string().max(255).default(''),
-  recruiterEmail: emptyOr(z.string().email('Format email tidak valid').max(255)).default(''),
-  recruiterPhone: z.string().max(32).default(''),
-  notes: z.string().max(20_000).default(''),
-  status: z.enum(STATUS_VALUES),
-  tags: z.array(z.string().max(64)).max(50).default([]),
-  documentIds: z.array(uuid).max(50).default([]),
-  archived: z.boolean().default(false),
-  favorite: z.boolean().default(false),
-});
+export const applicationInput = z
+  .object({
+    id: uuid,
+    company: z.string().trim().min(1, 'Nama perusahaan wajib diisi').max(255),
+    position: z.string().trim().min(1, 'Posisi wajib diisi').max(255),
+    department: z.string().max(255).default(''),
+    location: z.string().max(255).default(''),
+    workType: z.enum(WORK_TYPE_VALUES),
+    jobType: z.enum(JOB_TYPE_VALUES),
+    salaryMin: z.number().int().min(0).max(2_000_000_000).nullable(),
+    salaryMax: z.number().int().min(0).max(2_000_000_000).nullable(),
+    source: z.string().max(64).default(''),
+    url: safeUrl.default(''),
+    appliedDate: emptyOr(dateOnly).default(''),
+    deadline: emptyOr(dateOnly).default(''),
+    recruiterName: z.string().max(255).default(''),
+    recruiterEmail: emptyOr(z.string().email('Format email tidak valid').max(255)).default(''),
+    recruiterPhone: z.string().max(32).default(''),
+    notes: z.string().max(20_000).default(''),
+    status: z.enum(STATUS_VALUES),
+    tags: z.array(z.string().max(64)).max(50).default([]),
+    documentIds: z.array(uuid).max(50).default([]),
+    archived: z.boolean().default(false),
+    favorite: z.boolean().default(false),
+  })
+  /**
+   * Deadline tidak boleh mendahului tanggal melamar.
+   *
+   * Dilaporkan pengguna: sebuah lamaran tercatat melamar 26 Juli untuk lowongan
+   * yang deadline-nya 23 Juli. Lowongannya sudah tutup tiga hari sebelum
+   * orangnya melamar — data yang tidak mungkin, dan sebelumnya diterima tanpa
+   * sepatah kata.
+   *
+   * Bukan sekadar soal rapi. Pengingat deadline berbunyi H-3 dan H-1, dan
+   * keduanya sudah lewat pada tanggal seperti itu — jadi pengingatnya tidak
+   * pernah dibuat, pengguna tidak diingatkan, dan tidak ada yang memberi tahu
+   * kenapa. Menolak di sini membuat kesalahannya terlihat saat diketik, bukan
+   * ditemukan berbulan-bulan kemudian dari data yang aneh.
+   *
+   * Hanya diperiksa bila KEDUANYA terisi: dua-duanya opsional, dan lamaran
+   * tanpa salah satunya sah.
+   */
+  .superRefine((v, ctx) => {
+    if (v.appliedDate && v.deadline && v.deadline < v.appliedDate) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['deadline'],
+        message: 'Deadline tidak boleh lebih awal dari tanggal melamar.',
+      });
+    }
+  });
 
 /** Perubahan mengirim updatedAt yang dipegang klien, untuk deteksi konflik antar tab. */
 export const applicationUpdate = applicationInput.extend({
