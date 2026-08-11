@@ -1,4 +1,7 @@
 import { AwsClient } from 'aws4fetch';
+import { count, eq } from 'drizzle-orm';
+import { db } from '../db/client.ts';
+import { documents } from '../db/schema.ts';
 import { env } from './env.ts';
 import { ApiError } from './middleware.ts';
 
@@ -141,7 +144,8 @@ export async function deleteUserObjects(userId: string): Promise<number> {
       throw new ApiError(502, 'storage_error', 'Penyimpanan dokumen tidak merespons.');
     }
     const keys = [...(await res.text()).matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) => m[1]);
-    if (keys.length === 0) break;
+    // Habis: satu-satunya jalan keluar yang boleh mengaku selesai.
+    if (keys.length === 0) return dihapus;
     for (const key of keys) {
       // Kunci dari R2 sendiri, tapi tetap dipastikan berada di bawah prefix
       // pengguna ini — penghapusan massal tidak boleh bisa melebar.
@@ -150,7 +154,55 @@ export async function deleteUserObjects(userId: string): Promise<number> {
       dihapus++;
     }
   }
-  return dihapus;
+
+  /**
+   * Batas putaran tersentuh dan masih ada sisa.
+   *
+   * Sebelumnya fungsi ini keluar diam-diam lewat `break` dan mengembalikan
+   * angka, tidak bisa dibedakan dari "sudah bersih" — lalu pemanggilnya
+   * melanjutkan menghapus baris pengguna, dan sisanya jadi objek yatim yang
+   * tidak ada lagi pemiliknya. Melempar galat menahan pemanggilnya, persis
+   * seperti kegagalan mendaftar di atas.
+   */
+  throw new ApiError(
+    502,
+    'storage_error',
+    'Berkas dokumen terlalu banyak untuk dihapus sekaligus. Belum ada yang dihapus dari akunmu — coba lagi.',
+  );
+}
+
+/**
+ * Menghapus seluruh berkas milik seorang pengguna, atau MENOLAK kalau tidak
+ * bisa dipastikan bersih.
+ *
+ * Ada di sini, satu fungsi, karena dua pemanggilnya — hapus akun dan reset data
+ * — sama-sama menghapus baris `documents`, dan begitu baris itu hilang tidak
+ * ada lagi yang tahu berkas mana milik siapa. Invarian "objek dulu, baru baris"
+ * yang berdiri di dua tempat suatu hari akan berdiri di satu tempat saja;
+ * reset data memang sudah begitu, dan berkasnya tertinggal di R2 selamanya.
+ *
+ * `deleteUserObjects` mengembalikan 0 saat R2 tidak dikonfigurasi, yang tidak
+ * bisa dibedakan dari "memang tidak punya berkas". Karena itu jumlah barisnya
+ * diperiksa dulu, dan penghapusan dibatalkan seluruhnya kalau ada yang akan
+ * tertinggal. Menolak dengan jujur lebih baik daripada memenuhi setengahnya
+ * lalu mengaku selesai.
+ */
+export async function deleteUserFilesOrRefuse(userId: string): Promise<number> {
+  if (!configured) {
+    const [row] = await db
+      .select({ n: count() })
+      .from(documents)
+      .where(eq(documents.userId, userId));
+    if ((row?.n ?? 0) > 0) {
+      throw new ApiError(
+        502,
+        'storage_unavailable',
+        'Penyimpanan dokumen sedang tidak aktif, jadi berkasmu belum bisa ikut dihapus. Tidak ada yang jadi dihapus supaya tidak ada yang tertinggal. Coba lagi nanti.',
+      );
+    }
+    return 0;
+  }
+  return deleteUserObjects(userId);
 }
 
 export async function deleteObject(key: string): Promise<void> {

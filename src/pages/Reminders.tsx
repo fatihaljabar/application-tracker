@@ -106,6 +106,8 @@ export default function Reminders() {
               >
                 <button type="button"
                   onClick={() => toggleReminder(r.id)}
+                  aria-pressed={r.done}
+                  aria-label={`${t(r.done ? 'r.a11y.undone' : 'r.a11y.done')}: ${r.title}`}
                   className={cx(
                     'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-all duration-200 cursor-pointer',
                     r.done
@@ -149,15 +151,29 @@ export default function Reminders() {
                   </p>
                 </div>
 
-                <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                {/* Dua tambahan pada pola "muncul saat hover" yang sudah ada,
+                    keduanya soal KETERJANGKAUAN, bukan gaya:
+
+                    group-focus-within — tanpa ini pengguna papan ketik
+                    memfokuskan tombol yang tidak tergambar di layar.
+
+                    @media (hover: none) — Tailwind membungkus varian hover-nya
+                    dengan @media (hover: hover), jadi di layar sentuh aturannya
+                    TIDAK PERNAH berlaku dan tombolnya mustahil dijangkau. PRD § 9
+                    mensyaratkan setiap fitur bisa diselesaikan dari ponsel.
+
+                    Tampilan dengan tetikus tidak berubah sama sekali. */}
+                <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
                   <button type="button"
                     onClick={() => edit(r)}
+                    aria-label={`${t('r.a11y.edit')}: ${r.title}`}
                     className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] cursor-pointer"
                   >
                     <Icon name="fi-rr-pencil" className="text-[11px]" />
                   </button>
                   <button type="button"
                     onClick={() => setConfirmId(r.id)}
+                    aria-label={`${t('r.a11y.delete')}: ${r.title}`}
                     className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                   >
                     <Icon name="fi-rr-trash" className="text-[11px]" />

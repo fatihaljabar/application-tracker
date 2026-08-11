@@ -170,6 +170,13 @@ const id: Dict = {
   'r.type.cv_validity': 'Masa berlaku CV',
   'r.saved': 'Pengingat tersimpan',
   'r.empty': 'Belum ada pengingat',
+  // Tombolnya hanya berisi ikon, jadi tanpa label pembaca layar cuma menyebut
+  // "button". Judul pengingatnya ikut disebut supaya tiga tombol yang sama di
+  // daftar panjang bisa dibedakan (PRD § 9).
+  'r.a11y.done': 'Tandai selesai',
+  'r.a11y.undone': 'Batalkan tanda selesai',
+  'r.a11y.edit': 'Ubah pengingat',
+  'r.a11y.delete': 'Hapus pengingat',
   // documents
   'doc.title': 'Dokumen',
   'doc.subtitle': 'Simpan dan kelola berkas lamaranmu',
@@ -460,6 +467,10 @@ const en: Dict = {
   'r.type.cv_validity': 'CV validity',
   'r.saved': 'Reminder saved',
   'r.empty': 'No reminders yet',
+  'r.a11y.done': 'Mark as done',
+  'r.a11y.undone': 'Mark as not done',
+  'r.a11y.edit': 'Edit reminder',
+  'r.a11y.delete': 'Delete reminder',
   'doc.title': 'Documents',
   'doc.subtitle': 'Store and manage your application files',
   'doc.upload': 'Upload document',

@@ -1,14 +1,18 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, like } from 'drizzle-orm';
 import { Router } from 'express';
+import type { Reminder } from '../../shared/types.ts';
 import { db } from '../db/client.ts';
 import {
   activities,
   applicationDocuments,
   applications,
   documents,
+  reminders,
+  settings,
   statusHistory,
 } from '../db/schema.ts';
+import { autoKeyDeadline, judulTurunan, turunanDeadline } from '../lib/ahead.ts';
 import { ApiError } from '../lib/middleware.ts';
 import { requireAuth } from '../lib/session.ts';
 import {
@@ -50,6 +54,77 @@ async function assertDocumentsOwned(userId: string, ids: string[]) {
 }
 
 const emptyToNull = (v: string) => (v === '' ? null : v);
+
+/**
+ * Menyelaraskan pengingat deadline sebuah lamaran (PRD § 6.6: "Deadline
+ * lowongan — dibuat saat field deadline diisi, berbunyi H-3 dan H-1").
+ *
+ * Dipanggil HANYA saat nilai deadline-nya berubah. Itu yang membuat penghapusan
+ * oleh pengguna bertahan tanpa perlu kolom penanda seperti
+ * `followup_dismissed`: menyunting catatan lamaran tidak membangkitkan
+ * pengingat yang sudah dibuang, sementara mengganti tanggalnya memang
+ * seharusnya membuat jadwal baru.
+ *
+ * Yang lama dibuang lebih dulu, supaya memajukan deadline ikut memindahkan
+ * peringatannya — bukan meninggalkan peringatan yang menunjuk tanggal yang
+ * sudah tidak berlaku.
+ */
+async function syncDeadlineReminders(
+  userId: string,
+  appId: string,
+  company: string,
+  deadline: string | null,
+) {
+  const lama = await db
+    .select({ id: reminders.id })
+    .from(reminders)
+    .where(and(eq(reminders.userId, userId), like(reminders.autoKey, `deadline:%:${appId}`)));
+
+  if (lama.length) {
+    await db.delete(reminders).where(
+      inArray(
+        reminders.id,
+        lama.map((r) => r.id),
+      ),
+    );
+  }
+
+  const baru: Reminder[] = [];
+  if (deadline) {
+    const [pref] = await db
+      .select({ timezone: settings.timezone })
+      .from(settings)
+      .where(eq(settings.userId, userId))
+      .limit(1);
+
+    const judulAsli = `Deadline ${company}`;
+    for (const t of turunanDeadline(deadline, pref?.timezone ?? 'UTC')) {
+      const row = {
+        id: randomUUID(),
+        userId,
+        applicationId: appId,
+        type: 'deadline' as const,
+        title: judulTurunan(t.kunci, judulAsli),
+        datetime: t.at,
+        notes: '',
+        done: false,
+        autoKey: autoKeyDeadline(appId, t.kunci),
+      };
+      await db.insert(reminders).values(row);
+      baru.push({
+        id: row.id,
+        appId,
+        type: row.type,
+        title: row.title,
+        datetime: t.at.toISOString(),
+        notes: '',
+        done: false,
+      });
+    }
+  }
+
+  return { remindersAdded: baru, remindersRemoved: lama.map((r) => r.id) };
+}
 
 applicationsRouter.post('/', async (req, res) => {
   const userId = req.userId as string;
@@ -110,9 +185,21 @@ applicationsRouter.post('/', async (req, res) => {
     }
   });
 
-  res
-    .status(201)
-    .json({ id: input.id, createdAt: now.toISOString(), updatedAt: now.toISOString() });
+  // Di luar transaksi: lamarannya sudah tersimpan, dan gagal membuat pengingat
+  // tidak boleh membatalkan lamaran yang sudah benar tercatat.
+  const deadlineReminders = await syncDeadlineReminders(
+    userId,
+    input.id,
+    input.company,
+    emptyToNull(input.deadline),
+  );
+
+  res.status(201).json({
+    id: input.id,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    ...deadlineReminders,
+  });
 });
 
 applicationsRouter.put('/:id', async (req, res) => {
@@ -169,7 +256,14 @@ applicationsRouter.put('/:id', async (req, res) => {
     }
   });
 
-  res.json({ id, updatedAt: now.toISOString() });
+  // Hanya kalau tanggalnya benar-benar berubah — lihat syncDeadlineReminders.
+  const deadlineBaru = emptyToNull(input.deadline);
+  const deadlineReminders =
+    deadlineBaru === current.deadline
+      ? { remindersAdded: [], remindersRemoved: [] }
+      : await syncDeadlineReminders(userId, id, input.company, deadlineBaru);
+
+  res.json({ id, updatedAt: now.toISOString(), ...deadlineReminders });
 });
 
 /**
