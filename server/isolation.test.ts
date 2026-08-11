@@ -72,9 +72,16 @@ const ENDPOINTS: [method: string, path: string][] = [
 ];
 
 /**
- * Sengaja TIDAK ada di ENDPOINTS: `/unsubscribe` memang tanpa sesi (PRD § 6.13).
- * Penjaganya tanda tangan HMAC, dan itu diuji tersendiri di unsubscribe.test.ts
- * beserta kasus "tanda tangan pengguna lain ditolak".
+ * Sengaja TIDAK ada di ENDPOINTS, keduanya memang tanpa sesi:
+ *
+ * - `/unsubscribe` (PRD § 6.13) — orang yang ingin berhenti justru yang paling
+ *   tidak mau login dulu. Diuji di unsubscribe.test.ts, termasuk "tanda tangan
+ *   pengguna lain ditolak" dan "GET tidak mengubah apa pun".
+ * - `/notify-email` — yang menekannya adalah pemilik alamat email tujuan, yang
+ *   belum tentu punya akun di sini sama sekali. Diuji di notify-email.test.ts,
+ *   termasuk "tautan untuk satu alamat tidak mengesahkan alamat lain".
+ *
+ * Penjaga keduanya tanda tangan HMAC, bukan sesi.
  */
 
 /** Tabel yang punya kolom user_id — dipakai untuk membuktikan data uji bersih. */

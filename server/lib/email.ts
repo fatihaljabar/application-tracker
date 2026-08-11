@@ -54,6 +54,70 @@ export function verifyUnsubscribeToken(userId: string, token: string): boolean {
 export const unsubscribeUrl = (userId: string) =>
   `${env.appUrl}/api/unsubscribe?u=${encodeURIComponent(userId)}&t=${unsubscribeToken(userId)}`;
 
+/* -------------------------------------------------- konfirmasi alamat tujuan */
+
+/**
+ * Alamat tujuan notifikasi hanya berlaku setelah PEMILIK ALAMATNYA menekan
+ * tautan konfirmasi.
+ *
+ * Tanpa ini, siapa pun yang punya akun Google bisa mengarahkan pengingatnya ke
+ * alamat orang lain, lalu mengisi judul dan catatan reminder dengan tulisannya
+ * sendiri — dan korban menerimanya dari domain yang menandatangani DKIM-nya
+ * sendiri. Isinya sudah dilolosi dari HTML, jadi itu bukan XSS; yang bocor
+ * adalah reputasi domain ini sebagai pengirim.
+ *
+ * Alamat barunya IKUT ditandatangani, jadi tautan untuk satu alamat tidak bisa
+ * dipakai mengesahkan alamat lain. Tidak ada kolom "menunggu konfirmasi" di
+ * database: keadaannya hidup di dalam tautan, dan tautan yang tidak pernah
+ * diklik tidak mengubah apa pun.
+ *
+ * Awalannya berbeda dari `unsubscribe:` supaya tanda tangan yang satu tidak
+ * pernah bisa dipakai sebagai yang lain.
+ */
+const notifyMessage = (userId: string, email: string) => `notify-email:${userId}:${email}`;
+
+export function notifyEmailToken(userId: string, email: string): string {
+  return createHmac('sha256', env.sessionSecret)
+    .update(notifyMessage(userId, email))
+    .digest('base64url');
+}
+
+export function verifyNotifyEmailToken(userId: string, email: string, token: string): boolean {
+  const expected = Buffer.from(notifyEmailToken(userId, email));
+  const given = Buffer.from(token);
+  if (expected.length !== given.length) return false;
+  return timingSafeEqual(expected, given);
+}
+
+export const confirmNotifyUrl = (userId: string, email: string) =>
+  `${env.appUrl}/api/notify-email?u=${encodeURIComponent(userId)}&e=${encodeURIComponent(
+    email,
+  )}&t=${notifyEmailToken(userId, email)}`;
+
+/**
+ * Dikirim KE ALAMAT BARU, dan isinya tetap sama apa pun yang diketik pengguna —
+ * itu justru intinya. Tanpa konfirmasi, isi email ke alamat asing bisa ditulis
+ * siapa saja; dengan konfirmasi, satu-satunya yang bisa dikirim ke alamat yang
+ * belum mengiyakan adalah kalimat ini.
+ */
+export async function sendNotifyEmailConfirmation(
+  userId: string,
+  email: string,
+  nama: string,
+): Promise<boolean> {
+  return sendMail({
+    to: email,
+    subject: 'Konfirmasi alamat email pengingat',
+    heading: 'Satu langkah lagi',
+    userId,
+    bodyHtml: `<p style="margin:0 0 16px;font-size:14px;line-height:1.7">Akun Tracking Lamaran atas nama <strong>${esc(
+      nama,
+    )}</strong> meminta pengingatnya dikirim ke alamat ini.</p>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.7">Kalau itu memang kamu, tekan tombol di bawah. Kalau bukan, abaikan saja email ini — tanpa penekanan itu, tidak ada apa pun yang akan dikirim ke sini.</p>
+<p style="margin:0"><a href="${confirmNotifyUrl(userId, email)}" style="display:inline-block;background:#3f8f74;color:#fff;text-decoration:none;padding:10px 18px;border-radius:999px;font-size:14px">Ya, kirim pengingat ke sini</a></p>`,
+  });
+}
+
 /* ------------------------------------------------------------------ kiriman */
 
 /** Lolos dari HTML. Isi email datang dari data pengguna sendiri, tapi tetap. */

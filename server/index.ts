@@ -17,6 +17,7 @@ import { bookmarksRouter } from './routes/bookmarks.ts';
 import { documentsRouter } from './routes/documents.ts';
 import { exportRouter } from './routes/export.ts';
 import { notesRouter } from './routes/notes.ts';
+import { notifyEmailRouter } from './routes/notify-email.ts';
 import { remindersRouter } from './routes/reminders.ts';
 import { settingsRouter } from './routes/settings.ts';
 import { stateRouter } from './routes/state.ts';
@@ -118,6 +119,9 @@ app.use('/api/account', accountRouter);
 app.use('/api/export', exportLimit, exportRouter);
 // Sengaja tanpa sesi (PRD § 6.13) — penjaganya tanda tangan HMAC di tautannya.
 app.use('/api/unsubscribe', unsubscribeRouter);
+// Tanpa sesi, dengan alasan yang sama: yang menekannya pemilik alamat email,
+// yang belum tentu punya akun di sini. Penjaganya tanda tangan HMAC.
+app.use('/api/notify-email', notifyEmailRouter);
 
 // Rute resource menyusul di sini seiring M1.
 
