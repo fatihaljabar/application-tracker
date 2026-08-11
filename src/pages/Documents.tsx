@@ -198,7 +198,11 @@ export default function Documents() {
                           {used > 0 && ` · ${t('doc.usedIn')} ${used} ${t('doc.apps')}`}
                         </p>
                       </div>
-                      <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      {/* Sama seperti di halaman Pengingat: di layar sentuh varian
+                          hover tidak pernah berlaku, dan di sini yang tersembunyi
+                          adalah tombol UNDUH — pengguna ponsel tidak bisa mengambil
+                          dokumennya sendiri (PRD § 6.7, § 9). */}
+                      <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
                         {/* Tautan biasa, bukan fetch: unduhan adalah navigasi ke
                             endpoint kita, yang memeriksa kepemilikan lalu
                             mengalihkan ke URL bertanda tangan berumur 5 menit.
@@ -211,6 +215,7 @@ export default function Documents() {
                         </a>
                         <button type="button"
                           onClick={() => setConfirmId(d.id)}
+                          aria-label={`${t('c.delete')}: ${d.label}`}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--ink-muted)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] cursor-pointer"
                         >
                           <Icon name="fi-rr-trash" className="text-[11px]" />

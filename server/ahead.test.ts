@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { judulTurunan, turunanUntuk } from './lib/ahead.ts';
+import { autoKeyDeadline, judulTurunan, turunanDeadline, turunanUntuk } from './lib/ahead.ts';
 
 /**
  * Pengingat turunan menentukan KAPAN orang diberi tahu. Salah di sini berarti
@@ -73,6 +73,89 @@ describe('pengingat turunan', () => {
   });
 
   it('judulnya menyebut jaraknya, bukan mengulang judul aslinya', () => {
+    assert.equal(judulTurunan('h1', 'HR Interview'), 'Besok: HR Interview');
+    assert.equal(judulTurunan('j2', 'HR Interview'), '2 jam lagi: HR Interview');
+    assert.equal(judulTurunan('h3', 'Deadline'), '3 hari lagi: Deadline');
+  });
+});
+
+/**
+ * Deadline lamaran cuma TANGGAL, tanpa jam. Perhitungannya berdiri sendiri, dan
+ * yang paling mudah salah adalah pergeseran sehari: tanggal yang meleset
+ * membuat peringatan "3 hari lagi" datang 2 atau 4 hari sebelumnya, tanpa galat
+ * apa pun.
+ */
+describe('pengingat deadline lamaran', () => {
+  const WIB_ = 'Asia/Jakarta';
+  const jauhSebelumnya = new Date('2026-08-01T00:00:00Z');
+
+  it('H-3 dan H-1, keduanya pukul 07.00 waktu pengguna', () => {
+    const peta = Object.fromEntries(
+      turunanDeadline('2026-08-20', WIB_, jauhSebelumnya).map((x) => [x.kunci, x.at.toISOString()]),
+    );
+    // 17 Agustus 07.00 WIB = 16 Agustus 00.00 UTC.
+    assert.equal(peta.h3, '2026-08-17T00:00:00.000Z');
+    // 19 Agustus 07.00 WIB = 18 Agustus 00.00 UTC.
+    assert.equal(peta.h1, '2026-08-19T00:00:00.000Z');
+  });
+
+  it('tidak ada pengingat di hari deadline-nya sendiri', () => {
+    // PRD § 6.6 menyebut dua waktu, dan rangkuman harian sudah punya bagian
+    // "Deadline hari ini". Baris ketiga berarti email yang tidak dijanjikan.
+    const t = turunanDeadline('2026-08-20', WIB_, jauhSebelumnya);
+    assert.equal(t.length, 2);
+    assert.ok(!t.some((x) => x.at.toISOString().startsWith('2026-08-20')));
+  });
+
+  it('selisihnya dihitung sebagai TANGGAL, bukan 72 jam', () => {
+    // Zona dengan pergeseran waktu musim panas. Mengurangi 72 jam dari sebuah
+    // instan bisa mendarat di tanggal yang salah saat jamnya bergeser; menghitung
+    // tanggalnya tidak pernah bisa.
+    // Acuan "sekarang" harus mendahului tanggal yang paling awal diuji, kalau
+    // tidak turunannya tersaring sebagai masa lalu dan tesnya lulus atas array
+    // kosong — tanpa pernah menguji apa pun.
+    const awalTahun = new Date('2026-01-01T00:00:00Z');
+    for (const tanggal of ['2026-03-30', '2026-10-26', '2026-11-02']) {
+      const t = turunanDeadline(tanggal, 'America/Los_Angeles', awalTahun);
+      assert.equal(t.length, 2, `deadline ${tanggal} tidak menghasilkan dua turunan`);
+      const hari = t.map((x) =>
+        new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(x.at),
+      );
+      const beda = (a: string) =>
+        Math.round((+new Date(`${tanggal}T00:00:00Z`) - +new Date(`${a}T00:00:00Z`)) / 86400000);
+      assert.deepEqual(hari.map(beda), [3, 1], `deadline ${tanggal} meleset sehari`);
+    }
+  });
+
+  it('jam 07.00 mengikuti zona pengguna, bukan zona server', () => {
+    const jkt = turunanDeadline('2026-08-20', WIB_, jauhSebelumnya)[0];
+    const la = turunanDeadline('2026-08-20', 'America/Los_Angeles', jauhSebelumnya)[0];
+    assert.notEqual(jkt.at.toISOString(), la.at.toISOString());
+  });
+
+  it('yang sudah lewat tidak dibuat', () => {
+    // Deadline lusa: H-3 sudah lewat, hanya H-1 yang tersisa. Peringatan
+    // "3 hari lagi" untuk sesuatu yang tinggal 2 hari itu salah sekaligus telat.
+    const t = turunanDeadline('2026-08-20', WIB_, new Date('2026-08-18T00:00:00Z'));
+    assert.deepEqual(
+      t.map((x) => x.kunci),
+      ['h1'],
+    );
+    // Deadline yang sudah lewat sama sekali tidak menghasilkan apa pun.
+    assert.equal(turunanDeadline('2026-08-01', WIB_, jauhSebelumnya).length, 0);
+  });
+
+  it('zona rusak tidak menghasilkan waktu ngawur', () => {
+    assert.equal(turunanDeadline('2026-08-20', 'Bukan/Zona', jauhSebelumnya).length, 0);
+  });
+
+  it('penanda otomatisnya menempel ke lamaran, bukan ke reminder induk', () => {
+    // Deadline tidak punya induk — ia sebuah kolom tanggal. Penanda inilah yang
+    // membuat pengingatnya bisa ditemukan lagi saat tanggalnya berubah.
+    assert.equal(autoKeyDeadline('app-1', 'h3'), 'deadline:h3:app-1');
+  });
+
+  it('judulnya memakai bentuk yang sama dengan turunan lain', () => {
     assert.equal(judulTurunan('h1', 'HR Interview'), 'Besok: HR Interview');
     assert.equal(judulTurunan('j2', 'HR Interview'), '2 jam lagi: HR Interview');
     assert.equal(judulTurunan('h3', 'Deadline'), '3 hari lagi: Deadline');

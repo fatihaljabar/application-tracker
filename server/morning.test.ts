@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from './db/client.ts';
-import { reminders, settings, users } from './db/schema.ts';
+import { applications, reminders, settings, users } from './db/schema.ts';
 import { batasHariLokal, lokal, sendDailyDigests } from './jobs/digest.ts';
 import { sendDueReminders } from './jobs/reminders.ts';
 
@@ -100,12 +100,47 @@ function jamLokal(jam: number) {
   return new Date(+batasHariLokal(hariIni.tanggal, TZ).mulai + jam * 3600 * 1000);
 }
 
-async function buatReminder(userId: string, title: string, at: Date) {
+async function buatLamaran(id: string, userId: string, company: string, archived: boolean) {
+  const at = new Date();
+  await db.insert(applications).values({
+    id,
+    userId,
+    company,
+    position: 'Backend Engineer',
+    department: '',
+    location: '',
+    workType: 'Remote',
+    jobType: 'Full Time',
+    salaryMin: null,
+    salaryMax: null,
+    source: '',
+    url: '',
+    appliedDate: null,
+    deadline: null,
+    recruiterName: '',
+    recruiterEmail: '',
+    recruiterPhone: '',
+    notes: '',
+    status: 'applied',
+    tags: [],
+    archived,
+    favorite: false,
+    createdAt: at,
+    updatedAt: at,
+  });
+}
+
+async function buatReminder(
+  userId: string,
+  title: string,
+  at: Date,
+  applicationId: string | null = null,
+) {
   const id = randomUUID();
   await db.insert(reminders).values({
     id,
     userId,
-    applicationId: null,
+    applicationId,
     type: 'interview',
     title,
     datetime: at,
@@ -214,6 +249,43 @@ describe('satu pagi, satu email', () => {
     await buatReminder(u.id, 'Pagi', jamLokal(7));
     await sendDailyDigests();
     assert.equal(await sentAt(nanti), null, 'pengingat sore ditandai terkirim — tidak akan datang');
+  });
+
+  it('lamaran yang diarsipkan tidak mengirim pengingat apa pun', async () => {
+    // Mengarsipkan berarti "saya sudah selesai dengan ini". Tetap mengirimi
+    // pengingat soal lamaran itu mengabaikan keputusan penggunanya. Tugas
+    // follow-up sudah melewati arsip sejak awal; dua jalur ini belum.
+    const u = await buatPengguna(true);
+    const arsip = randomUUID();
+    const aktif = randomUUID();
+    await buatLamaran(arsip, u.id, 'PT Diarsipkan', true);
+    await buatLamaran(aktif, u.id, 'PT Masih Jalan', false);
+    await buatReminder(u.id, 'Pengingat lamaran arsip', jamLokal(7), arsip);
+    await buatReminder(u.id, 'Pengingat lamaran aktif', jamLokal(7), aktif);
+    // Yang tidak terikat lamaran sama sekali tidak boleh ikut tersaring: tidak
+    // ada arsip yang bisa menyembunyikannya.
+    await buatReminder(u.id, 'Pengingat lepas', jamLokal(7));
+
+    await sendDueReminders();
+    const surat = emailUntuk(u.email);
+    assert.equal(surat.length, 1, 'seharusnya satu email gabungan');
+    assert.ok(!surat[0].html.includes('Pengingat lamaran arsip'), 'lamaran arsip tetap dikirimi');
+    assert.ok(surat[0].html.includes('Pengingat lamaran aktif'), 'lamaran aktif ikut tersaring');
+    assert.ok(surat[0].html.includes('Pengingat lepas'), 'pengingat tanpa lamaran ikut tersaring');
+  });
+
+  it('rangkuman harian juga melewati lamaran yang diarsipkan', async () => {
+    const u = await buatPengguna(true);
+    const arsip = randomUUID();
+    await buatLamaran(arsip, u.id, 'PT Diarsipkan Juga', true);
+    await buatReminder(u.id, 'Agenda lamaran arsip', jamLokal(7), arsip);
+    await buatReminder(u.id, 'Agenda lamaran lepas', jamLokal(7));
+
+    await sendDailyDigests();
+    const surat = emailUntuk(u.email);
+    assert.equal(surat.length, 1, 'rangkuman tidak terkirim');
+    assert.ok(!surat[0].html.includes('Agenda lamaran arsip'), 'arsip muncul di rangkuman');
+    assert.ok(surat[0].html.includes('Agenda lamaran lepas'), 'yang lepas ikut hilang');
   });
 
   it('rangkuman gagal terkirim: klaim pengingat dilepas', async () => {

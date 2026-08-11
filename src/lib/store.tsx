@@ -27,6 +27,25 @@ import { translate } from './i18n';
 import { initials, uid } from './utils';
 
 /**
+ * Balasan endpoint lamaran saat kolom deadline berubah.
+ *
+ * Pengingat deadline H-3/H-1 dibuat di SERVER (PRD § 6.6), jadi klien tidak
+ * bisa menebak id maupun waktunya — zona waktu penggunalah yang menentukan, dan
+ * itu hanya diketahui server. Tanpa menggabungkan balasan ini, pengingatnya
+ * baru muncul di Kalender setelah halaman dimuat ulang penuh.
+ */
+interface DeadlineSync {
+  remindersAdded?: Reminder[];
+  remindersRemoved?: string[];
+}
+
+const gabungPengingatDeadline = (d: DB, r: DeadlineSync): Reminder[] => {
+  if (!r.remindersAdded?.length && !r.remindersRemoved?.length) return d.reminders;
+  const dibuang = new Set(r.remindersRemoved ?? []);
+  return [...d.reminders.filter((x) => !dibuang.has(x.id)), ...(r.remindersAdded ?? [])];
+};
+
+/**
  * Sumber data pindah dari localStorage ke server. Bentuk DB di memori sengaja
  * tidak berubah, karena itulah yang membuat 12 halaman tidak perlu disentuh
  * sama sekali (TECHNICAL.md § 7).
@@ -438,7 +457,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         };
         return run(
           () =>
-            post<{ createdAt: string; updatedAt: string }>('/applications', {
+            post<{ createdAt: string; updatedAt: string } & DeadlineSync>('/applications', {
               ...appPayload(app),
               activity: {
                 id: activity.id,
@@ -454,6 +473,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ...d,
             apps: [{ ...app, createdAt: r.createdAt, updatedAt: r.updatedAt }, ...d.apps],
             activities: [activity, ...d.activities],
+            reminders: gabungPengingatDeadline(d, r),
           }),
           done,
         );
@@ -462,13 +482,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveApp: (app, done) => {
         return run(
           () =>
-            put<{ updatedAt: string }>(`/applications/${app.id}`, {
+            put<{ updatedAt: string } & DeadlineSync>(`/applications/${app.id}`, {
               ...appPayload(app),
               updatedAt: app.updatedAt,
             }),
           (d, r) => ({
             ...d,
             apps: d.apps.map((a) => (a.id === app.id ? { ...app, updatedAt: r.updatedAt } : a)),
+            reminders: gabungPengingatDeadline(d, r),
           }),
           done,
         );
@@ -502,10 +523,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           updatedAt: now,
         };
         void run(
-          () => post<{ createdAt: string; updatedAt: string }>('/applications', appPayload(copy)),
+          () =>
+            post<{ createdAt: string; updatedAt: string } & DeadlineSync>(
+              '/applications',
+              appPayload(copy),
+            ),
           (d, r) => ({
             ...d,
             apps: [{ ...copy, createdAt: r.createdAt, updatedAt: r.updatedAt }, ...d.apps],
+            reminders: gabungPengingatDeadline(d, r),
           }),
         );
       },

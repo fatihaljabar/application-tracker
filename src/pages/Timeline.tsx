@@ -139,9 +139,13 @@ export default function Timeline() {
                               )}
                             </p>
                           </div>
+                          {/* Sama seperti di Pengingat dan Dokumen: varian hover
+                              tidak pernah berlaku di layar sentuh, jadi menghapus
+                              aktivitas (PRD § 6.5) mustahil dari ponsel. */}
                           <button type="button"
                             onClick={() => setConfirmId(a.id)}
-                            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--ink-muted)] opacity-0 transition-all duration-200 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] group-hover:opacity-100 cursor-pointer"
+                            aria-label={`${t('c.delete')}: ${a.title}`}
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--ink-muted)] opacity-0 transition-all duration-200 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 cursor-pointer"
                           >
                             <Icon name="fi-rr-trash" className="text-[11px]" />
                           </button>
