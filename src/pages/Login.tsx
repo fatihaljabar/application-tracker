@@ -110,17 +110,47 @@ export default function Login() {
 
       <div className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-14 px-6 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:px-10">
         <div className="anim-fade-up">
-          <div className="inline-flex items-center gap-2.5">
-            <img src="/logo.png" alt="" className="h-9 w-9 rounded-xl" />
-            <span className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
-              {t('appName')}
-            </span>
+          {/* Logo dan tautan hukum di satu baris, dengan justify-between: ini
+              posisi yang lazim dikenali sebagai "header" — dekat nama merek,
+              terlihat tanpa perlu menggulir, bukan catatan kaki di dasar kartu.
+              flex-wrap menjaga keduanya tetap terbaca di layar sempit, dengan
+              tautannya turun ke baris kedua alih-alih berdesakan. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="inline-flex items-center gap-2.5">
+              <img src="/logo.png" alt="" className="h-9 w-9 rounded-xl" />
+              <span className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
+                {t('appName')}
+              </span>
+            </div>
+            <p className="text-[12.5px] leading-relaxed text-[var(--ink-muted)]">
+              <a
+                href={lang === 'en' ? '/privacy.html' : '/privasi.html'}
+                className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
+              >
+                {t('l.privacy')}
+              </a>
+              <span aria-hidden="true"> · </span>
+              <a
+                href={lang === 'en' ? '/terms.html' : '/syarat.html'}
+                className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
+              >
+                {t('l.terms')}
+              </a>
+            </p>
           </div>
           <h1 className="mt-8 max-w-lg text-[38px] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--ink)] sm:text-[52px]">
             {t('l.welcome')}.<span className="block text-[var(--ink-muted)]">{t('tagline')}.</span>
           </h1>
           <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-[var(--ink-soft)]">
             {t('l.desc')}
+          </p>
+          {/* Menyebut "akun Google" dan data yang benar-benar dipakai secara
+              eksplisit — bukan cuma tagline pemasaran. Ini yang dibaca
+              peninjau layar persetujuan Google saat menilai "apa fungsi
+              aplikasi ini", dan kalimatnya sama persis dengan yang berlaku:
+              scope hanya openid, email, profile (PRD § 6.14). */}
+          <p className="mt-3 max-w-md text-[13px] leading-relaxed text-[var(--ink-muted)]">
+            {t('l.purpose')}
           </p>
           <div className="mt-9 flex flex-wrap gap-2.5">
             {[
@@ -191,38 +221,6 @@ export default function Login() {
 
           <p className="mt-7 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
             {t('l.local')}
-          </p>
-          {/* Ukuran, warna, dan perataan sengaja sama persis dengan baris di atasnya —
-              ini keterangan, bukan ajakan, jadi tidak boleh menarik perhatian dari
-              tombol masuk. Berkas statis di public/, bisa dibuka tanpa sesi. */}
-          <p className="mt-2 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
-            {/* Dua berkas terpisah, bukan satu halaman dwibahasa: ini dokumen
-                yang dibaca orang saat sedang khawatir, dan setengahnya dalam
-                bahasa asing membuatnya lebih sulit dipercaya, bukan lebih
-                lengkap.
-
-                Kondisi di bawah HAMPIR SELALU jatuh ke versi Indonesia, dan itu
-                disengaja dibiarkan: sebelum masuk, settings.language masih
-                bernilai bawaan karena pengaturan baru datang dari server
-                sesudah sesi terbentuk. Yang benar-benar membuat versi Inggris
-                terjangkau adalah tautan silang di kedua halaman itu sendiri —
-                termasuk bagi orang yang mendarat dari layar persetujuan Google,
-                yang selalu menunjuk /privasi.html. */}
-            <a
-              href={lang === 'en' ? '/privacy.html' : '/privasi.html'}
-              className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
-            >
-              {t('l.privacy')}
-            </a>
-            {/* Pemisahnya di luar tautan supaya tidak ikut bergaris bawah dan
-                tidak ikut terbaca sebagai bagian dari nama tautannya. */}
-            <span aria-hidden="true"> · </span>
-            <a
-              href={lang === 'en' ? '/terms.html' : '/syarat.html'}
-              className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
-            >
-              {t('l.terms')}
-            </a>
           </p>
         </div>
       </div>
