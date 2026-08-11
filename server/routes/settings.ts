@@ -3,11 +3,26 @@ import { Router } from 'express';
 import { db } from '../db/client.ts';
 import { settings, users } from '../db/schema.ts';
 import { sendNotifyEmailConfirmation } from '../lib/email.ts';
+import { buatPenghitung } from '../lib/ratelimit.ts';
 import { requireAuth } from '../lib/session.ts';
 import { parse, settingsInput } from '../lib/validate.ts';
 
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
+
+/**
+ * Berapa kali seorang pengguna boleh MEMICU email konfirmasi.
+ *
+ * Bukan pembatas pada endpoint-nya: pengaturan tersimpan otomatis tanpa tombol
+ * simpan (PRD § 6.18), jadi membatasi `PUT /settings` akan menghentikan orang
+ * yang cuma menggeser tema. Yang perlu direm hanya email yang keluar — dan itu
+ * satu-satunya bagian yang menyentuh kotak masuk orang lain.
+ *
+ * Ditolak dengan DIAM: pengaturannya tetap tersimpan dan balasannya tetap
+ * menyebut alamat yang menunggu, karena dari sudut pengguna tidak ada yang
+ * gagal — dia memang sudah dikirimi tautannya, beberapa kali.
+ */
+const kirimKonfirmasi = buatPenghitung({ max: 5, windowMs: 60 * 60_000 });
 
 /**
  * Seluruh pengaturan dikirim sekaligus, bukan sebagian. Klien selalu memegang
@@ -50,7 +65,7 @@ settingsRouter.put('/', async (req, res) => {
     diminta !== kini.notifyEmail.trim().toLowerCase() &&
     diminta !== kini.akun.trim().toLowerCase();
 
-  if (perluKonfirmasi) {
+  if (perluKonfirmasi && kirimKonfirmasi(userId).ok) {
     // Sengaja tidak menunggu hasilnya untuk memutuskan: gagal mengirim email
     // tidak boleh menggagalkan penyimpanan tema, zona waktu, dan target.
     await sendNotifyEmailConfirmation(userId, input.notifyEmail, kini.nama);
