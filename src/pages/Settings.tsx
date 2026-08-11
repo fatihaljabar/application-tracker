@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { PageHeader, TagChip } from '../components/shared';
 import { Button, Confirm, Field, Icon, Input, SectionTitle, Select, Toggle } from '../components/ui';
 import { TIMEZONES } from '../lib/constants';
-import { cx, downloadJSON } from '../lib/utils';
+import { cx } from '../lib/utils';
 
 function Row({
   title,
@@ -175,11 +175,13 @@ export default function Settings() {
           <SectionTitle title={t('set.data')} icon="fi-rr-cloud-upload-alt" />
           <p className="text-[12.5px] leading-relaxed text-[var(--ink-muted)]">{t('set.dataDesc')}</p>
           <div className="mt-4 flex flex-wrap gap-2">
+            {/* Navigasi ke endpoint, bukan dump isi memori. Data diambil ulang
+                dari database, jadi ekspor tidak pernah tertinggal dari
+                perubahan di perangkat lain. */}
             <Button
               icon="fi-rr-download"
               onClick={() => {
-                downloadJSON(db, 'lacak-lamaran-export.json');
-                toast(`${t('c.export')} ✓`);
+                window.location.href = '/api/export';
               }}
             >
               {t('c.export')}
