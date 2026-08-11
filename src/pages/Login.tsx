@@ -196,10 +196,18 @@ export default function Login() {
               ini keterangan, bukan ajakan, jadi tidak boleh menarik perhatian dari
               tombol masuk. Berkas statis di public/, bisa dibuka tanpa sesi. */}
           <p className="mt-2 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
-            {/* Mengikuti bahasa yang dipilih. Dua berkas terpisah, bukan satu
-                halaman dwibahasa: ini dokumen yang dibaca orang saat sedang
-                khawatir, dan setengahnya dalam bahasa asing membuatnya lebih
-                sulit dipercaya, bukan lebih lengkap. */}
+            {/* Dua berkas terpisah, bukan satu halaman dwibahasa: ini dokumen
+                yang dibaca orang saat sedang khawatir, dan setengahnya dalam
+                bahasa asing membuatnya lebih sulit dipercaya, bukan lebih
+                lengkap.
+
+                Kondisi di bawah HAMPIR SELALU jatuh ke versi Indonesia, dan itu
+                disengaja dibiarkan: sebelum masuk, settings.language masih
+                bernilai bawaan karena pengaturan baru datang dari server
+                sesudah sesi terbentuk. Yang benar-benar membuat versi Inggris
+                terjangkau adalah tautan silang di kedua halaman itu sendiri —
+                termasuk bagi orang yang mendarat dari layar persetujuan Google,
+                yang selalu menunjuk /privasi.html. */}
             <a
               href={lang === 'en' ? '/privacy.html' : '/privasi.html'}
               className="underline underline-offset-2 transition-colors duration-200 hover:text-[var(--ink-soft)] focus-ring rounded"
