@@ -55,6 +55,34 @@ const exportLimit = rateLimit({
   key: perUserOrIp,
   message: 'Terlalu sering mengekspor. Tunggu sebentar, lalu coba lagi.',
 });
+/**
+ * `GET /state` menjalankan kueri yang SAMA dengan ekspor — `buildState` yang
+ * itu juga — dan mengembalikan seluruh isi akun dalam satu panggilan. Pembatas
+ * tulis melewati GET, jadi sampai sekarang endpoint termahal di aplikasi ini
+ * satu-satunya yang tidak punya rem sama sekali, sementara pool cuma 5 koneksi.
+ *
+ * Lebih longgar daripada ekspor karena ini jalur normal aplikasi: dipanggil
+ * saat membuka aplikasi dan setiap kali sesi tersambung lagi. Tiga puluh per
+ * menit jauh di atas pemakaian siapa pun yang benar-benar sedang bekerja.
+ */
+const stateLimit = rateLimit({
+  max: 30,
+  windowMs: 60_000,
+  key: perUserOrIp,
+  message: 'Terlalu sering memuat data. Tunggu sebentar, lalu coba lagi.',
+});
+/**
+ * Konfirmasi alamat email tujuan: tanpa sesi, jadi per IP. Murah — satu HMAC
+ * dan satu UPDATE — tapi tanpa rem ia satu-satunya rute tanpa sesi yang bisa
+ * dipanggil tanpa batas untuk menebak tanda tangan. Menebaknya sia-sia
+ * (HMAC-SHA256), dan rem ini membuatnya sia-sia sekaligus lambat.
+ */
+const notifyLimit = rateLimit({
+  max: 20,
+  windowMs: 60_000,
+  key: perIp,
+  message: 'Terlalu sering. Coba lagi sebentar.',
+});
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 
 app.disable('x-powered-by');
@@ -105,7 +133,7 @@ app.get('/api/health', healthLimit, async (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
-app.use('/api/state', stateRouter);
+app.use('/api/state', stateLimit, stateRouter);
 app.use('/api/applications', applicationsRouter);
 app.use('/api/activities', activitiesRouter);
 app.use('/api/reminders', remindersRouter);
@@ -121,7 +149,7 @@ app.use('/api/export', exportLimit, exportRouter);
 app.use('/api/unsubscribe', unsubscribeRouter);
 // Tanpa sesi, dengan alasan yang sama: yang menekannya pemilik alamat email,
 // yang belum tentu punya akun di sini. Penjaganya tanda tangan HMAC.
-app.use('/api/notify-email', notifyEmailRouter);
+app.use('/api/notify-email', notifyLimit, notifyEmailRouter);
 
 // Rute resource menyusul di sini seiring M1.
 
