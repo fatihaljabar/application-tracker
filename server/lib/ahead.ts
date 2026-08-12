@@ -129,8 +129,11 @@ export function turunanDeadline(
 }
 
 /** Judul yang menjelaskan JARAKNYA, bukan mengulang judul aslinya. */
-export function judulTurunan(kunci: string, judulAsli: string): string {
-  const awalan = { h3: '3 hari lagi', h1: 'Besok', j2: '2 jam lagi' }[kunci] ?? 'Segera';
+export function judulTurunan(kunci: string, judulAsli: string, lang: 'id' | 'en' = 'id'): string {
+  const awalan =
+    lang === 'en'
+      ? ({ h3: 'In 3 days', h1: 'Tomorrow', j2: 'In 2 hours' }[kunci] ?? 'Soon')
+      : ({ h3: '3 hari lagi', h1: 'Besok', j2: '2 jam lagi' }[kunci] ?? 'Segera');
   return `${awalan}: ${judulAsli}`;
 }
 

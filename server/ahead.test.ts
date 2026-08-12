@@ -77,6 +77,12 @@ describe('pengingat turunan', () => {
     assert.equal(judulTurunan('j2', 'HR Interview'), '2 jam lagi: HR Interview');
     assert.equal(judulTurunan('h3', 'Deadline'), '3 hari lagi: Deadline');
   });
+
+  it('judulnya berbahasa Inggris kalau pengaturan bahasa pengguna en', () => {
+    assert.equal(judulTurunan('h1', 'HR Interview', 'en'), 'Tomorrow: HR Interview');
+    assert.equal(judulTurunan('j2', 'HR Interview', 'en'), 'In 2 hours: HR Interview');
+    assert.equal(judulTurunan('h3', 'Deadline', 'en'), 'In 3 days: Deadline');
+  });
 });
 
 /**

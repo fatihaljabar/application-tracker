@@ -180,7 +180,7 @@ export default function Timeline() {
             <Input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="Contoh: Email HR diterima"
+              placeholder={t('t.titlePlaceholder')}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">

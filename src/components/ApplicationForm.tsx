@@ -253,7 +253,7 @@ export default function ApplicationForm({
             <Textarea
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
-              placeholder="Catatan penting tentang lamaran ini…"
+              placeholder={t('f.notes.placeholder')}
             />
           </Field>
         </div>
@@ -265,7 +265,7 @@ export default function ApplicationForm({
             <Input
               value={form.recruiterName}
               onChange={(e) => set('recruiterName', e.target.value)}
-              placeholder="Nama recruiter"
+              placeholder={t('f.recruiter.placeholder')}
             />
           </Field>
           <Field label={t('f.recruiterEmail')} error={errors.recruiterEmail}>
@@ -273,7 +273,7 @@ export default function ApplicationForm({
               type="email"
               value={form.recruiterEmail}
               onChange={(e) => set('recruiterEmail', e.target.value)}
-              placeholder="recruiter@perusahaan.com"
+              placeholder={t('f.recruiterEmail.placeholder')}
             />
           </Field>
           <Field label={t('f.recruiterPhone')}>
