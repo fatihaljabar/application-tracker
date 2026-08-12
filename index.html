@@ -79,18 +79,27 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Flaticon: origin paling mahal di halaman ini menurut PageSpeed Insights
-         (satu berkas font ikonnya sendiri 428 KB, mendominasi jalur render
-         kritis). Belum pernah di-preconnect sebelumnya — Google Fonts sudah,
-         Flaticon belum, padahal Flaticon yang lebih berat. -->
+    <!--
+      crossorigin pada preconnect HARUS sama persis dengan cara resource-nya
+      diambil — kalau tidak, peramban menganggapnya koneksi berbeda dan
+      preconnect-nya sia-sia (dikonfirmasi PageSpeed Insights: "prakoneksi
+      tidak digunakan" untuk accounts.google.com sebelum baris ini diperbaiki).
+
+      Flaticon menyajikan DUA jenis resource sekaligus: CSS-nya sendiri (diambil
+      tanpa crossorigin, sama seperti <link rel="stylesheet"> biasa) dan berkas
+      font DI DALAM CSS itu (font lintas-origin SELALU diambil dengan
+      crossorigin — aturan peramban, bukan pilihan kita). Satu tag preconnect
+      cuma mewakili satu jenis, jadi dua baris di sini masing-masing untuk
+      satu jenis, sesuai pola resmi web.dev untuk origin yang menyajikan
+      keduanya.
+    -->
     <link rel="preconnect" href="https://cdn-uicons.flaticon.com" crossorigin />
-    <!-- accounts.google.com: src/lib/google.ts menyuntik skrip GSI async saat
-         Login dipasang. Skripnya sendiri tidak bisa ditunda lebih jauh tanpa
-         menunda kapan tombol masuk BENAR-BENAR bisa diklik (tombol yang
-         terlihat cuma hiasan; tombol Google asli ditumpuk di atasnya baru ada
-         setelah skrip ini selesai) — preconnect cuma menghangatkan koneksinya
-         lebih awal, tidak mengubah kapan skripnya mulai dimuat. -->
-    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="preconnect" href="https://cdn-uicons.flaticon.com" />
+    <!-- accounts.google.com: src/lib/google.ts memuat skrip GSI lewat
+         <script src> biasa, TANPA crossorigin — jadi preconnect di sini juga
+         tanpa crossorigin, supaya benar-benar dipakai alih-alih membuka
+         koneksi yang tidak pernah tersentuh. -->
+    <link rel="preconnect" href="https://accounts.google.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
       rel="stylesheet"
