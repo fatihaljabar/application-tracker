@@ -79,18 +79,52 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Flaticon: origin paling mahal di halaman ini menurut PageSpeed Insights
+         (satu berkas font ikonnya sendiri 428 KB, mendominasi jalur render
+         kritis). Belum pernah di-preconnect sebelumnya — Google Fonts sudah,
+         Flaticon belum, padahal Flaticon yang lebih berat. -->
+    <link rel="preconnect" href="https://cdn-uicons.flaticon.com" crossorigin />
+    <!-- accounts.google.com: src/lib/google.ts menyuntik skrip GSI async saat
+         Login dipasang. Skripnya sendiri tidak bisa ditunda lebih jauh tanpa
+         menunda kapan tombol masuk BENAR-BENAR bisa diklik (tombol yang
+         terlihat cuma hiasan; tombol Google asli ditumpuk di atasnya baru ada
+         setelah skrip ini selesai) — preconnect cuma menghangatkan koneksinya
+         lebih awal, tidak mengubah kapan skripnya mulai dimuat. -->
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
       rel="stylesheet"
     />
+    <!--
+      Dua CSS Flaticon ini dulu <link rel="stylesheet"> biasa — memblokir render
+      2.780 md dari 3.510 md total (data PageSpeed Insights, mobile). media="print"
+      membuat peramban TIDAK menunggunya untuk menggambar layar, tapi tetap
+      mengunduhnya di latar belakang; defer-icon-css.js mengaktifkannya begitu
+      HTML selesai di-parse.
+
+      Skrip eksternal, bukan atribut onload inline — CSP di atas TIDAK memuat
+      'unsafe-inline' di script-src, jadi onload="..." inline akan dibisukan CSP
+      tanpa galat sama sekali dan ikon tidak akan pernah muncul di layar biasa.
+      src="/defer-icon-css.js" sah di bawah script-src 'self' tanpa mengubah CSP
+      sedikit pun.
+
+      Konsekuensi yang disadari: ikon bisa tampil tanpa gaya sepersekian detik
+      di pemuatan pertama sebelum CSS-nya aktif — pertukaran yang jauh lebih
+      baik daripada memblokir seluruh halaman untuk itu.
+    -->
     <link
       rel="stylesheet"
       href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css"
+      media="print"
+      data-defer-swap
     />
     <link
       rel="stylesheet"
       href="https://cdn-uicons.flaticon.com/2.6.0/uicons-solid-rounded/css/uicons-solid-rounded.css"
+      media="print"
+      data-defer-swap
     />
+    <script src="/defer-icon-css.js" defer></script>
 </head>
   <body>
     <div id="root"></div>
