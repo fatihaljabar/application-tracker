@@ -89,7 +89,7 @@ export function TagPicker({
   value: string[];
   onChange: (v: string[]) => void;
 }) {
-  const { db, addTag } = useStore();
+  const { db, addTag, t } = useStore();
   const [draft, setDraft] = useState('');
   const palette = ['#2f6f5e', '#5b7fa6', '#b58a52', '#a6708f', '#6f7fb5', '#8a72b0', '#b06565'];
 
@@ -126,7 +126,7 @@ export function TagPicker({
               create();
             }
           }}
-          placeholder="+ tag baru"
+          placeholder={t('f.tags.new')}
           className="h-8 flex-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 text-[12.5px] text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus-ring"
         />
         <button

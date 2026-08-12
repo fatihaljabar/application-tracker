@@ -205,7 +205,7 @@ export default function Reminders() {
             <Input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="Contoh: Interview HR Tokopedia"
+              placeholder={t('r.titlePlaceholder')}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">

@@ -83,7 +83,7 @@ remindersRouter.put('/:id', async (req, res) => {
 
   if (!input.done) {
     const [pref] = await db
-      .select({ timezone: settings.timezone })
+      .select({ timezone: settings.timezone, language: settings.language })
       .from(settings)
       .where(eq(settings.userId, userId))
       .limit(1);
@@ -95,7 +95,7 @@ remindersRouter.put('/:id', async (req, res) => {
           userId,
           applicationId: input.appId,
           type: input.type,
-          title: judulTurunan(t.kunci, input.title),
+          title: judulTurunan(t.kunci, input.title, pref?.language),
           datetime: t.at,
           notes: input.notes,
           done: false,
