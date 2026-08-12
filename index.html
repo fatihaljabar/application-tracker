@@ -95,11 +95,26 @@
     -->
     <link rel="preconnect" href="https://cdn-uicons.flaticon.com" crossorigin />
     <link rel="preconnect" href="https://cdn-uicons.flaticon.com" />
-    <!-- accounts.google.com: src/lib/google.ts memuat skrip GSI lewat
-         <script src> biasa, TANPA crossorigin — jadi preconnect di sini juga
-         tanpa crossorigin, supaya benar-benar dipakai alih-alih membuka
-         koneksi yang tidak pernah tersentuh. -->
-    <link rel="preconnect" href="https://accounts.google.com" />
+    <!-- accounts.google.com SENGAJA tidak di-preconnect: PageSpeed Insights mulai
+         menandai "lebih dari 4 koneksi preconnect" begitu baris ini ditambah
+         (bersama 2 baris Flaticon + 2 baris fonts.g*, jadi 5). Skrip GSI dimuat
+         lewat useEffect di Login.tsx — ditunda, bukan bagian jalur render kritis
+         LCP — jadi preconnect di sini tidak membantu skor, cuma menghabiskan
+         satu dari sedikit slot preconnect yang direkomendasikan. -->
+    <link
+      rel="preload"
+      as="image"
+      href="/logo.png"
+      fetchpriority="high"
+    />
+    <!-- Elemen LCP di halaman masuk adalah logo ini (dikonfirmasi PageSpeed
+         Insights), tapi HTML mentah cuma <div id="root"></div> — <img>-nya baru
+         ADA di DOM setelah React merender, jadi peramban baru tahu perlu
+         mengunduhnya setelah JS selesai jalan (2.640 md "penundaan pemuatan
+         resource" di breakdown LCP). Preload ini membuat peramban mulai
+         mengunduhnya dari HTML mentah, sejajar dengan resource lain, tanpa
+         menunggu JS. Dipakai juga di Layout.tsx (sidebar & header setelah
+         login), jadi tidak pernah sia-sia siapa pun yang membuka aplikasi. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
       rel="stylesheet"
