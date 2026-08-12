@@ -98,7 +98,7 @@ export default function Login() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--bg)]">
+    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)]">
       <div
         className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full opacity-60 blur-3xl"
         style={{ background: 'radial-gradient(circle, var(--accent-soft), transparent 68%)' }}
@@ -217,6 +217,6 @@ export default function Login() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
