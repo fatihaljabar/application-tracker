@@ -131,7 +131,7 @@ export default function Settings() {
               <Input
                 type="email"
                 value={s.notifyEmail}
-                placeholder="kamu@email.com"
+                placeholder={t('set.notifyEmail.placeholder')}
                 onChange={(e) => updateSettings({ notifyEmail: e.target.value })}
               />
             </Field>

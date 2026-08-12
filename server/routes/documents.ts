@@ -223,11 +223,12 @@ async function buatPengingatMasaBerlaku(
   if (row.category !== 'cv') return;
   try {
     const [pref] = await db
-      .select({ hari: settings.cvValidDays })
+      .select({ hari: settings.cvValidDays, language: settings.language })
       .from(settings)
       .where(eq(settings.userId, userId))
       .limit(1);
     const hari = pref?.hari ?? 90;
+    const en = pref?.language === 'en';
     await db
       .insert(reminders)
       .values({
@@ -235,9 +236,11 @@ async function buatPengingatMasaBerlaku(
         userId,
         applicationId: null,
         type: 'cv_validity',
-        title: `Perbarui ${row.label}`,
+        title: en ? `Update ${row.label}` : `Perbarui ${row.label}`,
         datetime: new Date(Date.now() + hari * 24 * 3600 * 1000),
-        notes: `Sudah ${hari} hari sejak berkas ini diunggah. Cek apakah isinya masih terbaru.`,
+        notes: en
+          ? `It's been ${hari} days since this file was uploaded. Check if it's still up to date.`
+          : `Sudah ${hari} hari sejak berkas ini diunggah. Cek apakah isinya masih terbaru.`,
         done: false,
         autoKey: autoKeyCv(row.id),
       })

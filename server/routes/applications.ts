@@ -92,7 +92,7 @@ async function syncDeadlineReminders(
   const baru: Reminder[] = [];
   if (deadline) {
     const [pref] = await db
-      .select({ timezone: settings.timezone })
+      .select({ timezone: settings.timezone, language: settings.language })
       .from(settings)
       .where(eq(settings.userId, userId))
       .limit(1);
@@ -104,7 +104,7 @@ async function syncDeadlineReminders(
         userId,
         applicationId: appId,
         type: 'deadline' as const,
-        title: judulTurunan(t.kunci, judulAsli),
+        title: judulTurunan(t.kunci, judulAsli, pref?.language),
         datetime: t.at,
         notes: '',
         done: false,
