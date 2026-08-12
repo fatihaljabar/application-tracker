@@ -167,6 +167,13 @@ if (existsSync(distDir)) {
       setHeaders: (res, filePath) => {
         if (filePath.includes(`${path.sep}assets${path.sep}`)) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else if (!filePath.endsWith('.html')) {
+          // Berkas lepas di public/ (favicon, logo, defer-icon-css.js, robots.txt,
+          // dst.) tidak berhash seperti assets/, jadi bukan immutable — tapi
+          // sebelumnya sama sekali tanpa Cache-Control (PageSpeed Insights
+          // menandainya). Sehari cukup untuk manfaat cache, cukup pendek untuk
+          // batasi umur versi basi kalau isinya berubah.
+          res.setHeader('Cache-Control', 'public, max-age=86400');
         }
       },
     }),

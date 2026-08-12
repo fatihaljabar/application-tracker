@@ -11,7 +11,10 @@
   --line-strong: #d8d4cc;
   --ink: #23211d;
   --ink-soft: #57534a;
-  --ink-muted: #8d887d;
+  /* Digelapkan dari #8d887d — kontrasnya 3,27:1 di atas --bg, gagal WCAG AA
+     teks normal (4,5:1). Hue & saturation dipertahankan sama, cuma lightness
+     digeser sampai lolos ambang di kombinasi terburuknya. */
+  --ink-muted: #757066;
   --accent: #2f6f5e;
   --accent-soft: #e6efec;
   --accent-ink: #1f5648;
@@ -31,7 +34,9 @@
   --line-strong: #3a3e45;
   --ink: #eceae5;
   --ink-soft: #b6b2aa;
-  --ink-muted: #85817a;
+  /* Dicerahkan dari #85817a — kontrasnya 4,21:1 di atas --surface, gagal WCAG
+     AA teks normal. Hue & saturation dipertahankan sama seperti versi terang. */
+  --ink-muted: #8b8780;
   --accent: #6fb3a0;
   --accent-soft: #22322e;
   --accent-ink: #9ad3c3;
