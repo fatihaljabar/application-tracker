@@ -160,7 +160,7 @@ export default function Applications() {
               onChange={setStatus}
               placeholder={t('f.status')}
               options={[
-                { value: '', label: t('c.all') },
+                { value: '', label: t('a.allStatuses') },
                 ...STATUS_KEYS.map((s) => ({
                   value: s,
                   label: t(`status.${s}`),
@@ -261,7 +261,7 @@ export default function Applications() {
       </div>
 
       <p className="mt-4 text-[12px] text-[var(--ink-muted)]">
-        {list.length} {t('c.results')}
+        {list.length} {list.length === 1 ? t('c.result') : t('c.results')}
       </p>
 
       {list.length === 0 ? (

@@ -4,7 +4,7 @@ const id: Dict = {
   appName: 'Tracking Lamaran',
   /** Judul tab peramban. Nilai awalnya juga ada di index.html, dipakai sebelum React hidup. */
   docTitle: 'Tracking Lamaran — Pelacak Lamaran Kerja',
-  tagline: 'Kelola perjalanan karier dengan tenang',
+  tagline: 'Kelola lamaran kerja lebih rapi',
   // nav
   'nav.dashboard': 'Dasbor',
   'nav.applications': 'Lamaran',
@@ -44,7 +44,7 @@ const id: Dict = {
   'c.save': 'Simpan',
   'c.cancel': 'Batal',
   'c.search': 'Cari',
-  'c.filter': 'Filter',
+  'c.filter': 'Filter lanjutan',
   'c.reset': 'Atur ulang',
   'c.close': 'Tutup',
   'c.all': 'Semua',
@@ -74,6 +74,7 @@ const id: Dict = {
   'c.company_az': 'Perusahaan A–Z',
   'c.deadlineSoon': 'Deadline terdekat',
   'c.favorite': 'Favorit',
+  'c.result': 'hasil',
   'c.results': 'hasil',
   'c.offline': 'Tidak tersambung ke server',
   // fields
@@ -134,6 +135,7 @@ const id: Dict = {
   'a.editApp': 'Edit lamaran',
   'a.showArchived': 'Tampilkan arsip',
   'a.searchPh': 'Cari perusahaan, posisi, lokasi…',
+  'a.allStatuses': 'Semua status',
   'a.duplicated': 'Lamaran diduplikasi',
   'a.saved': 'Lamaran tersimpan',
   'a.deleted': 'Lamaran dihapus',
@@ -300,9 +302,8 @@ const id: Dict = {
   'set.newTag': 'Nama tag baru',
   // login
   'l.welcome': 'Selamat datang',
-  'l.desc': 'Catat, lacak, dan menangkan setiap lamaran kerja dalam satu tempat yang tenang.',
-  'l.purpose':
-    'Masuk dengan akun Google untuk menyimpan lamaran, jadwal interview, dan dokumen CV Anda. Kami hanya memakai nama, email, dan foto profil dari akun Google Anda — tidak ada akses ke Gmail, kontak, kalender, atau Drive.',
+  'l.desc':
+    'Pantau status lamaran, sesuaikan CV untuk tiap posisi, dan dapatkan pengingat jadwal interview tanpa ribet.',
   'l.google': 'Lanjutkan dengan Google',
   'l.guest': 'Masuk sebagai tamu',
   'l.local': 'Data tersimpan di akunmu dan bisa dibuka dari perangkat mana pun.',
@@ -311,18 +312,22 @@ const id: Dict = {
   'l.signInFailed': 'Gagal masuk. Coba lagi.',
   'l.serverDown': 'Server tidak merespons. Pastikan server berjalan, lalu coba lagi.',
   'l.signingIn': 'Sedang masuk…',
-  'l.choose': 'Pilih akun',
-  'l.chooseDesc': 'untuk melanjutkan ke Tracking Lamaran',
+  'l.choose': 'Masuk ke akunmu',
+  'l.chooseDesc': 'Lanjutkan dengan Google untuk membuka dasbor lamaranmu.',
   'l.signedIn': 'Berhasil masuk',
-  'l.f1': 'Pipeline kanban',
-  'l.f2': 'Pengingat & kalender',
-  'l.f3': 'Statistik lengkap',
+  'l.f1': 'Pipeline kanban interaktif',
+  'l.f2': 'Pengingat jadwal otomatis',
+  'l.f3': 'Ringkasan statistik seleksi',
+  'l.previewDeadline': 'Besok: Deadline CV',
+  'l.trustTitle': 'Privasi tetap terjaga',
+  'l.trust':
+    'Hanya nama, email, dan foto profil yang dipakai. Tanpa akses ke Gmail, kontak, kalender, atau Drive.',
 };
 
 const en: Dict = {
   appName: 'Job Tracker',
   docTitle: 'Job Tracker — Track Every Job Application',
-  tagline: 'Manage your career journey calmly',
+  tagline: 'Keep your job search organized',
   'nav.dashboard': 'Dashboard',
   'nav.applications': 'Applications',
   'nav.pipeline': 'Pipeline',
@@ -359,7 +364,7 @@ const en: Dict = {
   'c.save': 'Save',
   'c.cancel': 'Cancel',
   'c.search': 'Search',
-  'c.filter': 'Filter',
+  'c.filter': 'More filters',
   'c.reset': 'Reset',
   'c.close': 'Close',
   'c.all': 'All',
@@ -389,6 +394,7 @@ const en: Dict = {
   'c.company_az': 'Company A–Z',
   'c.deadlineSoon': 'Closest deadline',
   'c.favorite': 'Favorite',
+  'c.result': 'result',
   'c.results': 'results',
   'c.offline': 'Not connected to the server',
   'f.company': 'Company name',
@@ -446,6 +452,7 @@ const en: Dict = {
   'a.editApp': 'Edit application',
   'a.showArchived': 'Show archived',
   'a.searchPh': 'Search company, position, location…',
+  'a.allStatuses': 'All statuses',
   'a.duplicated': 'Application duplicated',
   'a.saved': 'Application saved',
   'a.deleted': 'Application deleted',
@@ -597,9 +604,8 @@ const en: Dict = {
   'set.tagManager': 'Manage tags',
   'set.newTag': 'New tag name',
   'l.welcome': 'Welcome',
-  'l.desc': 'Record, track and win every job application in one calm place.',
-  'l.purpose':
-    'Sign in with your Google account to save your applications, interview schedule, and CV documents. We only use your name, email, and profile photo from Google — no access to Gmail, contacts, calendar, or Drive.',
+  'l.desc':
+    'Track application status, match the right CV to each role, and get interview reminders without the hassle.',
   'l.google': 'Continue with Google',
   'l.guest': 'Continue as guest',
   'l.local': 'Your data lives in your account and opens from any device.',
@@ -608,12 +614,15 @@ const en: Dict = {
   'l.signInFailed': 'Sign-in failed. Please try again.',
   'l.serverDown': 'The server is not responding. Make sure it is running, then try again.',
   'l.signingIn': 'Signing in…',
-  'l.choose': 'Choose an account',
-  'l.chooseDesc': 'to continue to Job Tracker',
+  'l.choose': 'Sign in to your account',
+  'l.chooseDesc': 'Continue with Google to open your dashboard.',
   'l.signedIn': 'Signed in successfully',
-  'l.f1': 'Kanban pipeline',
-  'l.f2': 'Reminders & calendar',
-  'l.f3': 'Rich statistics',
+  'l.f1': 'Interactive kanban pipeline',
+  'l.f2': 'Automatic schedule reminders',
+  'l.f3': 'Application funnel statistics',
+  'l.previewDeadline': 'Tomorrow: CV deadline',
+  'l.trustTitle': 'Your privacy stays protected',
+  'l.trust': 'Only your name, email, and profile photo are used. No access to Gmail, contacts, calendar, or Drive.',
 };
 
 export const dicts = { id, en };
