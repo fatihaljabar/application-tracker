@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/ui';
 import { loadGoogleIdentity } from '../lib/google';
 import { initials } from '../lib/utils';
+import { statusMeta } from '../lib/constants';
 import { useStore } from '../lib/store';
 
 export default function Login() {
@@ -119,29 +120,64 @@ export default function Login() {
           <h1 className="mt-8 max-w-lg text-[38px] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--ink)] sm:text-[52px]">
             {t('l.welcome')}.<span className="block text-[var(--ink-muted)]">{t('tagline')}.</span>
           </h1>
+          {/* Satu paragraf saja — penjelasan "kenapa akun Google" sekarang
+              cuma di kartu kanan (dekat tombol), tidak diulang di sini, biar
+              kolom kiri tidak jadi dua blok teks yang bilang hal sama. */}
           <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-[var(--ink-soft)]">
             {t('l.desc')}
           </p>
-          {/* Menyebut "akun Google" dan data yang benar-benar dipakai secara
-              eksplisit — bukan cuma tagline pemasaran. Ini yang dibaca
-              peninjau layar persetujuan Google saat menilai "apa fungsi
-              aplikasi ini", dan kalimatnya sama persis dengan yang berlaku:
-              scope hanya openid, email, profile (PRD § 6.14). */}
-          <p className="mt-3 max-w-md text-[13px] leading-relaxed text-[var(--ink-muted)]">
-            {t('l.purpose')}
-          </p>
-          <div className="mt-9 flex flex-wrap gap-2.5">
-            {[
-              { icon: 'fi-rr-apps', label: t('l.f1') },
-              { icon: 'fi-rr-bell', label: t('l.f2') },
-              { icon: 'fi-rr-chart-histogram', label: t('l.f3') },
-            ].map((f) => (
+          {/* Pratinjau ilustratif dari kartu lamaran sungguhan — bukan tangkapan
+              layar, nama perusahaan sengaja generik. Warna status asli dari
+              statusMeta, sama yang dipakai di Pipeline sungguhan (PRD § 6.4),
+              supaya yang dijanjikan di sini benar-benar seperti yang dilihat
+              pengguna setelah masuk. */}
+          <div
+            className="anim-fade-up mt-8 w-full max-w-md rounded-2xl border border-[var(--line-strong)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]"
+            style={{ animationDelay: '60ms' }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12.5px] text-[var(--ink-muted)]">PT Teknologi Maju</p>
               <span
-                key={f.label}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-[12.5px] text-[var(--ink-soft)]"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none"
+                style={{
+                  color: 'var(--warn)',
+                  background: 'color-mix(in srgb, var(--warn) 12%, transparent)',
+                  borderColor: 'color-mix(in srgb, var(--warn) 35%, transparent)',
+                }}
               >
-                <Icon name={f.icon} className="text-[12px] text-[var(--accent)]" />
-                {f.label}
+                <Icon name="fi-rr-bell" className="text-[10px]" />
+                {t('l.previewDeadline')}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[17px] font-semibold leading-snug text-[var(--ink)]">
+              Frontend Engineer
+            </p>
+            <div className="mt-3.5 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--line)] bg-[var(--surface-2)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--ink-soft)]">
+                <Icon name="fi-rr-file" className="text-[10px]" />
+                CV_Frontend_2026.pdf
+              </span>
+              <span
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium leading-none"
+                style={{
+                  color: statusMeta('user_interview').color,
+                  background: `${statusMeta('user_interview').color}17`,
+                }}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: statusMeta('user_interview').color }}
+                />
+                {t('status.user_interview')}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] font-medium text-[var(--ink-muted)]">
+            {[t('l.f1'), t('l.f2'), t('l.f3')].map((label) => (
+              <span key={label} className="inline-flex items-center gap-1.5">
+                <Icon name="fi-rr-check" className="text-[10px] text-[var(--accent)]" />
+                {label}
               </span>
             ))}
           </div>
@@ -197,7 +233,19 @@ export default function Login() {
             />
           </div>
 
-          <p className="mt-7 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
+          {/* Kepercayaan ditegaskan tepat di sebelah tombol, bukan cuma di
+              kolom kiri — ini yang dilihat orang sedetik sebelum klik. */}
+          <div className="mt-5 flex items-start gap-2.5 rounded-xl bg-[var(--surface-2)] px-3.5 py-3">
+            <Icon name="fi-rr-lock" className="mt-0.5 shrink-0 text-[12px] text-[var(--ink-soft)]" />
+            <div>
+              <p className="text-[12.5px] font-semibold text-[var(--ink)]">{t('l.trustTitle')}</p>
+              <p className="mt-0.5 text-[11.5px] leading-relaxed text-[var(--ink-soft)]">
+                {t('l.trust')}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-5 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
             {t('l.local')}
           </p>
           <p className="mt-2 text-center text-[11.5px] leading-relaxed text-[var(--ink-muted)]">
