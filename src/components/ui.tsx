@@ -379,7 +379,11 @@ export function Menu({
           e.stopPropagation();
           setOpen((o) => !o);
         }}
-        className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-all duration-200 hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] focus-ring cursor-pointer"
+        className={
+          trigger
+            ? 'w-full rounded-xl text-[var(--ink-muted)] cursor-pointer'
+            : 'grid h-8 w-8 place-items-center rounded-full text-[var(--ink-muted)] transition-all duration-200 hover:bg-[var(--bg-soft)] hover:text-[var(--ink)] focus-ring cursor-pointer'
+        }
       >
         {trigger ?? <Icon name="fi-rr-menu-dots" className="text-[13px]" />}
       </button>
