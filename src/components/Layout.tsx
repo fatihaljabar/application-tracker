@@ -117,7 +117,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </span>
         </div>
         {nav}
-        <div className="border-t border-[var(--line)] p-3">
+        <div className="border-t border-[var(--line)] p-4">
           <Menu
             align="left"
             items={[
