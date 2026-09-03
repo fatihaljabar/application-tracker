@@ -137,8 +137,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               },
             ]}
             trigger={
-              <span className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 transition-colors hover:bg-[var(--bg-soft)]">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--accent-soft)] text-[12px] font-semibold text-[var(--accent-ink)]">
+              <span className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[var(--bg-soft)]">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[12px] font-semibold text-[var(--accent-ink)]">
                   {user?.avatar ?? 'T'}
                 </span>
                 <span className="min-w-0 flex-1 text-left">
@@ -149,7 +149,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     {user?.email ?? 'local'}
                   </span>
                 </span>
-                <Icon name="fi-rr-menu-dots" className="text-[11px] text-[var(--ink-muted)]" />
+                <Icon name="fi-rr-menu-dots" className="shrink-0 pl-1 text-[11px] text-[var(--ink-muted)]" />
               </span>
             }
           />
