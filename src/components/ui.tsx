@@ -191,7 +191,17 @@ export function Select({
   options,
   onChange,
   placeholder = 'Pilih',
-  className,
+  // Default DI SINI, bukan digabung permanen ke class dasar di bawah — kalau
+  // 'w-full' ikut ditulis di string dasar, ia bertabrakan head-to-head di CSS
+  // yang di-generate Tailwind dengan className lebar tetap yang dikirim
+  // pemanggil (mis. "w-[150px]"), dan urutan kemunculan di stylesheet itu yang
+  // sebenarnya menentukan siapa menang — bukan urutan penulisan di className,
+  // dan w-full kebetulan selalu menang. Sebagai default parameter, className
+  // yang dikirim pemanggil MENGGANTIKAN nilai ini sepenuhnya, jadi tidak
+  // pernah head-to-head. Ditemukan lewat tangkapan layar sungguhan: dropdown
+  // di Applications melebar penuh dan saling dorong ke baris sendiri padahal
+  // sudah dikirim `className="w-[150px]"`.
+  className = 'w-full',
   size = 'md',
 }: {
   value: string;
@@ -251,7 +261,7 @@ export function Select({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cx(
-          'flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-3.5 text-left text-[var(--ink)] transition-all duration-200 focus-ring hover:border-[var(--line-strong)] cursor-pointer',
+          'flex items-center justify-between gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-3.5 text-left text-[var(--ink)] transition-all duration-200 focus-ring hover:border-[var(--line-strong)] cursor-pointer',
           size === 'sm' ? 'h-9 text-[12.5px]' : 'h-10 text-[13.5px]',
           open && 'border-[var(--accent)]',
           className,
