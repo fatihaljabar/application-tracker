@@ -81,6 +81,18 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     });
     return;
   }
+  // Galat dari body-parser (JSON rusak, body kebesaran, kompresi rusak) adalah
+  // salah kirim dari klien, bukan bug server: teruskan status 4xx-nya.
+  const status = (err as { status?: unknown } | null)?.status;
+  if (
+    typeof status === 'number' &&
+    status >= 400 &&
+    status < 500 &&
+    (err as { expose?: unknown }).expose === true
+  ) {
+    res.status(status).json({ error: { code: 'bad_request', message: 'Permintaan tidak valid.' } });
+    return;
+  }
   // Bug, bukan galat yang direncanakan: dicatat lengkap, tapi klien hanya tahu ada kegagalan.
   console.error('[unhandled]', err);
   res.status(500).json({
